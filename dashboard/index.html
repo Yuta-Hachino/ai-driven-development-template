@@ -3,9 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Autonomous Dev - P2P Dashboard</title>
+    <title>Autonomous Dev - P2P Dashboard (Enhanced)</title>
+    <!-- Vue.js 3 -->
     <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Octokit (GitHub API) -->
+    <script src="https://cdn.skypack.dev/@octokit/rest"></script>
     <style>
         * {
             margin: 0;
@@ -22,7 +26,7 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
         }
 
@@ -56,19 +60,93 @@
             margin-left: 10px;
         }
 
-        .status-active {
+        .status-connected {
             background: #10b981;
             color: white;
         }
 
-        .status-idle {
-            background: #6b7280;
+        .status-disconnected {
+            background: #ef4444;
             color: white;
         }
 
+        /* Token Configuration */
+        .config-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .config-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #f3f4f6;
+        }
+
+        /* Stats Grid */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -105,9 +183,43 @@
             margin-top: 5px;
         }
 
+        /* Tabs */
+        .tabs {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95em;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .tab:hover:not(.active) {
+            background: #f3f4f6;
+        }
+
+        /* Instance Cards */
         .instances-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -135,26 +247,42 @@
         .instance-id {
             font-weight: 600;
             color: #333;
+            font-size: 1.1em;
         }
 
         .instance-status {
-            padding: 3px 10px;
+            padding: 4px 12px;
             border-radius: 10px;
             font-size: 0.8em;
             font-weight: 600;
         }
 
-        .status-ready { background: #10b981; color: white; }
-        .status-working { background: #3b82f6; color: white; }
-        .status-completed { background: #8b5cf6; color: white; }
+        .status-in_progress { background: #3b82f6; color: white; }
+        .status-completed { background: #10b981; color: white; }
+        .status-queued { background: #f59e0b; color: white; }
         .status-failed { background: #ef4444; color: white; }
 
         .instance-info {
             font-size: 0.9em;
             color: #666;
-            margin: 5px 0;
+            margin: 8px 0;
+            line-height: 1.5;
         }
 
+        .instance-controls {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.85em;
+        }
+
+        /* Chart Container */
         .chart-container {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 15px;
@@ -170,6 +298,48 @@
             color: #333;
         }
 
+        /* Messages Log */
+        .messages-log {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .message-item {
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .message-type {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .message-time {
+            font-size: 0.85em;
+            color: #999;
+        }
+
+        .message-content {
+            font-size: 0.9em;
+            color: #666;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Loading & Error */
         .loading {
             text-align: center;
             padding: 50px;
@@ -187,207 +357,388 @@
 
         .last-update {
             text-align: center;
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.9);
             margin-top: 20px;
             font-size: 0.9em;
-        }
-
-        .refresh-btn {
-            background: white;
-            color: #667eea;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 10px;
-            cursor: pointer;
             font-weight: 600;
-            font-size: 1em;
-            transition: all 0.3s ease;
-        }
-
-        .refresh-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
 
         @media (max-width: 768px) {
-            h1 {
-                font-size: 1.8em;
-            }
-
+            h1 { font-size: 1.8em; }
             .stats-grid,
-            .instances-grid {
-                grid-template-columns: 1fr;
-            }
+            .instances-grid { grid-template-columns: 1fr; }
+            .config-form { flex-direction: column; }
+            .tabs { flex-direction: column; }
         }
     </style>
 </head>
 <body>
     <div id="app">
         <div class="container">
+            <!-- Header -->
             <div class="header">
                 <h1>🤖 Autonomous Dev Dashboard</h1>
                 <p class="subtitle">
-                    P2P Coordination System
-                    <span class="status-badge" :class="isActive ? 'status-active' : 'status-idle'">
-                        {{ isActive ? 'Active' : 'Idle' }}
+                    P2P Coordination System (Enhanced)
+                    <span class="status-badge" :class="connected ? 'status-connected' : 'status-disconnected'">
+                        {{ connected ? '🟢 Connected' : '🔴 Disconnected' }}
                     </span>
                 </p>
-                <button class="refresh-btn" @click="fetchData" :disabled="loading">
-                    {{ loading ? 'Loading...' : '🔄 Refresh' }}
+            </div>
+
+            <!-- Configuration Panel -->
+            <div class="config-panel" v-if="!connected">
+                <h2 style="margin-bottom: 15px;">⚙️ Configuration</h2>
+                <form class="config-form" @submit.prevent="saveConfig">
+                    <div class="form-group">
+                        <label class="form-label">GitHub Token</label>
+                        <input
+                            type="password"
+                            class="form-input"
+                            v-model="config.token"
+                            placeholder="ghp_xxxxxxxxxxxx"
+                            required
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Repository (owner/repo)</label>
+                        <input
+                            type="text"
+                            class="form-input"
+                            v-model="config.repo"
+                            placeholder="username/repository"
+                            required
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Issue Number (optional)</label>
+                        <input
+                            type="number"
+                            class="form-input"
+                            v-model="config.issueNumber"
+                            placeholder="Auto-detect"
+                        />
+                    </div>
+                    <button type="submit" class="btn btn-primary">Connect</button>
+                </form>
+                <p style="margin-top: 15px; font-size: 0.9em; color: #666;">
+                    💡 Token is stored locally in your browser. Create a token at:
+                    <a href="https://github.com/settings/tokens" target="_blank" style="color: #667eea;">github.com/settings/tokens</a>
+                </p>
+            </div>
+
+            <!-- Error Display -->
+            <div v-if="error" class="error">
+                ⚠️ {{ error }}
+                <button @click="error = null; connected = false" class="btn btn-secondary" style="margin-left: 10px;">
+                    Reconfigure
                 </button>
             </div>
 
-            <div v-if="error" class="error">
-                ⚠️ {{ error }}
-            </div>
-
-            <div v-if="loading && !data" class="loading">
-                Loading dashboard data...
-            </div>
-
-            <div v-if="data && !loading">
-                <!-- Statistics Cards -->
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-label">Active Instances</div>
-                        <div class="stat-value">{{ stats.activeInstances }}</div>
-                        <div class="stat-trend">{{ stats.totalInstances }} total</div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-label">Tasks Completed</div>
-                        <div class="stat-value">{{ stats.completedTasks }}</div>
-                        <div class="stat-trend">{{ stats.totalTasks }} total</div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-label">Success Rate</div>
-                        <div class="stat-value">{{ stats.successRate }}%</div>
-                        <div class="stat-trend">{{ stats.failedTasks }} failed</div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-label">Avg Execution Time</div>
-                        <div class="stat-value">{{ stats.avgExecutionTime }}</div>
-                        <div class="stat-trend">Per task</div>
+            <!-- Main Content (only show when connected) -->
+            <div v-if="connected">
+                <!-- Control Bar -->
+                <div class="config-panel">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <strong>Repository:</strong> {{ config.repo }} |
+                            <strong>Issue:</strong> #{{ currentIssueNumber || 'Auto-detecting...' }} |
+                            <strong>Refresh:</strong> Every 5s
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button @click="fetchData" :disabled="loading" class="btn btn-primary btn-sm">
+                                {{ loading ? '⏳ Loading...' : '🔄 Refresh Now' }}
+                            </button>
+                            <button @click="disconnect" class="btn btn-secondary btn-sm">
+                                🚪 Disconnect
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Instance Cards -->
-                <div class="instances-grid">
-                    <div
-                        v-for="instance in instances"
-                        :key="instance.node_id"
-                        class="instance-card"
-                        :class="{ leader: instance.is_leader }"
-                    >
-                        <div class="instance-header">
-                            <div class="instance-id">
-                                {{ instance.is_leader ? '👑 ' : '⚙️ ' }}
-                                Instance {{ instance.instance }}
+                <div v-if="loading && !data" class="loading">
+                    Loading dashboard data...
+                </div>
+
+                <div v-if="data">
+                    <!-- Tabs -->
+                    <div class="tabs">
+                        <button
+                            v-for="tab in tabs"
+                            :key="tab.id"
+                            :class="['tab', { active: activeTab === tab.id }]"
+                            @click="activeTab = tab.id"
+                        >
+                            {{ tab.icon }} {{ tab.label }}
+                        </button>
+                    </div>
+
+                    <!-- Tab: Overview -->
+                    <div v-show="activeTab === 'overview'">
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-label">Active Workflows</div>
+                                <div class="stat-value">{{ stats.activeWorkflows }}</div>
+                                <div class="stat-trend">{{ stats.totalWorkflows }} total runs</div>
                             </div>
-                            <span class="instance-status" :class="`status-${instance.status}`">
-                                {{ instance.status }}
-                            </span>
+                            <div class="stat-card">
+                                <div class="stat-label">P2P Messages</div>
+                                <div class="stat-value">{{ stats.totalMessages }}</div>
+                                <div class="stat-trend">{{ stats.recentMessages }} recent</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Success Rate</div>
+                                <div class="stat-value">{{ stats.successRate }}%</div>
+                                <div class="stat-trend">{{ stats.failedWorkflows }} failed</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Avg Duration</div>
+                                <div class="stat-value">{{ stats.avgDuration }}</div>
+                                <div class="stat-trend">Per workflow</div>
+                            </div>
                         </div>
-                        <div class="instance-info">
-                            <strong>Node ID:</strong> {{ instance.node_id.substring(0, 20) }}...
+
+                        <div class="chart-container">
+                            <div class="chart-title">Workflow Status Distribution</div>
+                            <canvas id="statusChart"></canvas>
                         </div>
-                        <div class="instance-info" v-if="instance.current_task">
-                            <strong>Current Task:</strong> {{ instance.current_task }}
+
+                        <div class="chart-container">
+                            <div class="chart-title">Activity Timeline (Last 24h)</div>
+                            <canvas id="timelineChart"></canvas>
                         </div>
-                        <div class="instance-info">
-                            <strong>Started:</strong> {{ formatTime(instance.started_at) }}
+                    </div>
+
+                    <!-- Tab: Workflows -->
+                    <div v-show="activeTab === 'workflows'">
+                        <div class="instances-grid">
+                            <div
+                                v-for="workflow in data.workflows"
+                                :key="workflow.id"
+                                class="instance-card"
+                            >
+                                <div class="instance-header">
+                                    <div class="instance-id">
+                                        {{ workflow.name }}
+                                    </div>
+                                    <span class="instance-status" :class="`status-${workflow.status}`">
+                                        {{ workflow.status }}
+                                    </span>
+                                </div>
+                                <div class="instance-info">
+                                    <strong>ID:</strong> {{ workflow.id }}
+                                </div>
+                                <div class="instance-info">
+                                    <strong>Started:</strong> {{ formatTime(workflow.created_at) }}
+                                </div>
+                                <div class="instance-info" v-if="workflow.conclusion">
+                                    <strong>Conclusion:</strong> {{ workflow.conclusion }}
+                                </div>
+                                <div class="instance-controls">
+                                    <a :href="workflow.html_url" target="_blank" class="btn btn-secondary btn-sm">
+                                        🔗 View on GitHub
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Messages -->
+                    <div v-show="activeTab === 'messages'">
+                        <div class="messages-log">
+                            <h3 class="chart-title">P2P Messages ({{ data.messages.length }} total)</h3>
+                            <div
+                                v-for="msg in data.messages.slice().reverse()"
+                                :key="msg.id"
+                                class="message-item"
+                            >
+                                <div class="message-header">
+                                    <span class="message-type">{{ msg.type }}</span>
+                                    <span class="message-time">{{ formatTime(msg.created_at) }}</span>
+                                </div>
+                                <div class="message-content">{{ msg.body.substring(0, 150) }}...</div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Charts -->
-                <div class="chart-container">
-                    <div class="chart-title">Task Status Distribution</div>
-                    <canvas id="taskChart"></canvas>
+                <div class="last-update">
+                    Last updated: {{ lastUpdate }}<br>
+                    <span style="font-size: 0.85em; opacity: 0.8;">Auto-refresh every 5 seconds</span>
                 </div>
-
-                <div class="chart-container">
-                    <div class="chart-title">Instance Activity Timeline</div>
-                    <canvas id="timelineChart"></canvas>
-                </div>
-            </div>
-
-            <div class="last-update">
-                Last updated: {{ lastUpdate }}
-                <br>
-                Auto-refresh every 30 seconds
             </div>
         </div>
     </div>
 
-    <script>
+    <script type="module">
         const { createApp } = Vue;
+        const { Octokit } = window.Octokit;
 
         createApp({
             data() {
                 return {
+                    config: {
+                        token: localStorage.getItem('github_token') || '',
+                        repo: localStorage.getItem('github_repo') || '',
+                        issueNumber: localStorage.getItem('github_issue') || null
+                    },
+                    connected: false,
                     data: null,
-                    loading: true,
+                    currentIssueNumber: null,
+                    loading: false,
                     error: null,
-                    lastUpdate: new Date().toLocaleString(),
-                    taskChart: null,
-                    timelineChart: null
+                    lastUpdate: '',
+                    octokit: null,
+                    refreshInterval: null,
+                    activeTab: 'overview',
+                    tabs: [
+                        { id: 'overview', label: 'Overview', icon: '📊' },
+                        { id: 'workflows', label: 'Workflows', icon: '⚙️' },
+                        { id: 'messages', label: 'P2P Messages', icon: '💬' }
+                    ],
+                    charts: {}
                 };
             },
             computed: {
-                isActive() {
-                    return this.stats.activeInstances > 0;
-                },
-                instances() {
-                    if (!this.data) return [];
-                    return this.data;
-                },
                 stats() {
-                    if (!this.data || this.data.length === 0) {
+                    if (!this.data) {
                         return {
-                            activeInstances: 0,
-                            totalInstances: 0,
-                            completedTasks: 0,
-                            failedTasks: 0,
-                            totalTasks: 0,
+                            activeWorkflows: 0,
+                            totalWorkflows: 0,
+                            totalMessages: 0,
+                            recentMessages: 0,
                             successRate: 0,
-                            avgExecutionTime: '0s'
+                            failedWorkflows: 0,
+                            avgDuration: '0m'
                         };
                     }
 
-                    const active = this.data.filter(i => i.status === 'working' || i.status === 'ready').length;
-                    const completed = this.data.filter(i => i.status === 'completed').length;
-                    const failed = this.data.filter(i => i.status === 'failed').length;
-                    const total = this.data.length;
+                    const workflows = this.data.workflows || [];
+                    const messages = this.data.messages || [];
+                    const active = workflows.filter(w => w.status === 'in_progress' || w.status === 'queued').length;
+                    const completed = workflows.filter(w => w.conclusion === 'success').length;
+                    const failed = workflows.filter(w => w.conclusion === 'failure').length;
+                    const total = workflows.length;
                     const successRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
                     return {
-                        activeInstances: active,
-                        totalInstances: total,
-                        completedTasks: completed,
-                        failedTasks: failed,
-                        totalTasks: total,
-                        successRate: successRate,
-                        avgExecutionTime: '12s'  // TODO: Calculate from real data
+                        activeWorkflows: active,
+                        totalWorkflows: total,
+                        totalMessages: messages.length,
+                        recentMessages: messages.filter(m => {
+                            const age = Date.now() - new Date(m.created_at).getTime();
+                            return age < 3600000; // Last hour
+                        }).length,
+                        successRate,
+                        failedWorkflows: failed,
+                        avgDuration: '5m' // TODO: Calculate from real data
                     };
                 }
             },
             methods: {
+                saveConfig() {
+                    if (!this.config.token || !this.config.repo) {
+                        this.error = 'Please provide both GitHub token and repository';
+                        return;
+                    }
+
+                    localStorage.setItem('github_token', this.config.token);
+                    localStorage.setItem('github_repo', this.config.repo);
+                    if (this.config.issueNumber) {
+                        localStorage.setItem('github_issue', this.config.issueNumber);
+                    }
+
+                    this.octokit = new Octokit({ auth: this.config.token });
+                    this.connected = true;
+                    this.fetchData();
+                    this.startAutoRefresh();
+                },
+                disconnect() {
+                    this.connected = false;
+                    this.data = null;
+                    this.stopAutoRefresh();
+                    localStorage.removeItem('github_token');
+                    localStorage.removeItem('github_repo');
+                    localStorage.removeItem('github_issue');
+                    this.config = { token: '', repo: '', issueNumber: null };
+                },
                 async fetchData() {
+                    if (!this.octokit) return;
+
                     this.loading = true;
                     this.error = null;
 
                     try {
-                        // Try to fetch latest metrics from gh-pages
-                        const response = await fetch('data/latest.json');
-
-                        if (!response.ok) {
-                            throw new Error('No data available yet. Run a P2P workflow to generate data.');
+                        const [owner, repo] = this.config.repo.split('/');
+                        if (!owner || !repo) {
+                            throw new Error('Invalid repository format. Use: owner/repo');
                         }
 
-                        this.data = await response.json();
+                        // Find autonomous-dev issue if not specified
+                        let issueNumber = this.config.issueNumber;
+                        if (!issueNumber) {
+                            const { data: issues } = await this.octokit.issues.listForRepo({
+                                owner,
+                                repo,
+                                state: 'open',
+                                labels: 'autonomous-dev',
+                                per_page: 1
+                            });
+
+                            if (issues.length === 0) {
+                                throw new Error('No issue with "autonomous-dev" label found');
+                            }
+
+                            issueNumber = issues[0].number;
+                            this.currentIssueNumber = issueNumber;
+                        }
+
+                        // Fetch issue comments (P2P messages)
+                        const { data: comments } = await this.octokit.issues.listComments({
+                            owner,
+                            repo,
+                            issue_number: issueNumber,
+                            per_page: 100
+                        });
+
+                        // Parse P2P messages
+                        const messages = comments.filter(c =>
+                            c.body.includes('🎯') || c.body.includes('📡') ||
+                            c.body.includes('📦') || c.body.includes('📊') ||
+                            c.body.includes('💓')
+                        ).map(c => ({
+                            id: c.id,
+                            type: this.parseMessageType(c.body),
+                            body: c.body,
+                            created_at: c.created_at,
+                            user: c.user.login
+                        }));
+
+                        // Fetch workflow runs
+                        const { data: workflowData } = await this.octokit.actions.listWorkflowRunsForRepo({
+                            owner,
+                            repo,
+                            per_page: 20
+                        });
+
+                        const workflows = workflowData.workflow_runs
+                            .filter(w => w.name.toLowerCase().includes('p2p') || w.name.toLowerCase().includes('autonomous'))
+                            .map(w => ({
+                                id: w.id,
+                                name: w.name,
+                                status: w.status,
+                                conclusion: w.conclusion,
+                                created_at: w.created_at,
+                                updated_at: w.updated_at,
+                                html_url: w.html_url
+                            }));
+
+                        this.data = {
+                            workflows,
+                            messages,
+                            issue_number: issueNumber
+                        };
+
                         this.lastUpdate = new Date().toLocaleString();
 
                         // Update charts
@@ -398,98 +749,64 @@
                     } catch (error) {
                         console.error('Error fetching data:', error);
                         this.error = error.message;
-
-                        // Load sample data for demo
-                        this.loadSampleData();
                     } finally {
                         this.loading = false;
                     }
                 },
-                loadSampleData() {
-                    // Sample data for demonstration
-                    this.data = [
-                        {
-                            instance: 1,
-                            node_id: 'sample-run-1234567890-job-1',
-                            status: 'completed',
-                            is_leader: true,
-                            current_task: null,
-                            started_at: new Date(Date.now() - 600000).toISOString(),
-                            timestamp: new Date().toISOString()
-                        },
-                        {
-                            instance: 2,
-                            node_id: 'sample-run-1234567890-job-2',
-                            status: 'working',
-                            is_leader: false,
-                            current_task: 'task-2',
-                            started_at: new Date(Date.now() - 300000).toISOString(),
-                            timestamp: new Date().toISOString()
-                        },
-                        {
-                            instance: 3,
-                            node_id: 'sample-run-1234567890-job-3',
-                            status: 'ready',
-                            is_leader: false,
-                            current_task: null,
-                            started_at: new Date(Date.now() - 100000).toISOString(),
-                            timestamp: new Date().toISOString()
-                        }
-                    ];
-
-                    this.$nextTick(() => {
-                        this.updateCharts();
-                    });
+                parseMessageType(body) {
+                    if (body.includes('LEADER_ELECTION')) return '👑 Leader Election';
+                    if (body.includes('NODE_ANNOUNCE')) return '📡 Node Announce';
+                    if (body.includes('TASKS_DATA')) return '📦 Tasks Data';
+                    if (body.includes('CLAIM')) return '🎯 Task Claim';
+                    if (body.includes('PROGRESS')) return '📊 Progress';
+                    if (body.includes('HEARTBEAT')) return '💓 Heartbeat';
+                    return '📨 Message';
                 },
                 updateCharts() {
-                    this.updateTaskChart();
+                    this.updateStatusChart();
                     this.updateTimelineChart();
                 },
-                updateTaskChart() {
-                    const ctx = document.getElementById('taskChart');
+                updateStatusChart() {
+                    const ctx = document.getElementById('statusChart');
                     if (!ctx) return;
 
-                    if (this.taskChart) {
-                        this.taskChart.destroy();
+                    if (this.charts.status) {
+                        this.charts.status.destroy();
                     }
 
                     const statusCounts = {
-                        ready: 0,
-                        working: 0,
+                        in_progress: 0,
+                        queued: 0,
                         completed: 0,
                         failed: 0
                     };
 
-                    this.data.forEach(instance => {
-                        statusCounts[instance.status] = (statusCounts[instance.status] || 0) + 1;
+                    this.data.workflows.forEach(w => {
+                        if (w.status === 'in_progress') statusCounts.in_progress++;
+                        else if (w.status === 'queued') statusCounts.queued++;
+                        else if (w.conclusion === 'success') statusCounts.completed++;
+                        else if (w.conclusion === 'failure') statusCounts.failed++;
                     });
 
-                    this.taskChart = new Chart(ctx, {
+                    this.charts.status = new Chart(ctx, {
                         type: 'doughnut',
                         data: {
-                            labels: ['Ready', 'Working', 'Completed', 'Failed'],
+                            labels: ['In Progress', 'Queued', 'Completed', 'Failed'],
                             datasets: [{
                                 data: [
-                                    statusCounts.ready,
-                                    statusCounts.working,
+                                    statusCounts.in_progress,
+                                    statusCounts.queued,
                                     statusCounts.completed,
                                     statusCounts.failed
                                 ],
-                                backgroundColor: [
-                                    '#10b981',
-                                    '#3b82f6',
-                                    '#8b5cf6',
-                                    '#ef4444'
-                                ],
+                                backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#ef4444'],
                                 borderWidth: 0
                             }]
                         },
                         options: {
                             responsive: true,
                             plugins: {
-                                legend: {
-                                    position: 'bottom'
-                                }
+                                legend: { position: 'bottom' }
                             }
                         }
                     });
@@ -498,18 +815,34 @@
                     const ctx = document.getElementById('timelineChart');
                     if (!ctx) return;
 
-                    if (this.timelineChart) {
-                        this.timelineChart.destroy();
+                    if (this.charts.timeline) {
+                        this.charts.timeline.destroy();
                     }
 
-                    // Sample timeline data
-                    this.timelineChart = new Chart(ctx, {
+                    // Group workflows by hour
+                    const now = new Date();
+                    const hours = [];
+                    const counts = [];
+
+                    for (let i = 23; i >= 0; i--) {
+                        const hour = new Date(now - i * 3600000);
+                        hours.push(hour.getHours() + ':00');
+
+                        const count = this.data.workflows.filter(w => {
+                            const wDate = new Date(w.created_at);
+                            return wDate >= new Date(now - (i + 1) * 3600000) && wDate < new Date(now - i * 3600000);
+                        }).length;
+
+                        counts.push(count);
+                    }
+
+                    this.charts.timeline = new Chart(ctx, {
                         type: 'line',
                         data: {
-                            labels: ['5min ago', '4min ago', '3min ago', '2min ago', '1min ago', 'Now'],
+                            labels: hours,
                             datasets: [{
-                                label: 'Active Instances',
-                                data: [1, 2, 3, 3, 2, this.stats.activeInstances],
+                                label: 'Workflows Started',
+                                data: counts,
                                 borderColor: '#667eea',
                                 backgroundColor: 'rgba(102, 126, 234, 0.1)',
                                 fill: true,
@@ -519,16 +852,12 @@
                         options: {
                             responsive: true,
                             plugins: {
-                                legend: {
-                                    display: false
-                                }
+                                legend: { display: false }
                             },
                             scales: {
                                 y: {
                                     beginAtZero: true,
-                                    ticks: {
-                                        stepSize: 1
-                                    }
+                                    ticks: { stepSize: 1 }
                                 }
                             }
                         }
@@ -544,15 +873,30 @@
                     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
                     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
                     return date.toLocaleDateString();
+                },
+                startAutoRefresh() {
+                    this.refreshInterval = setInterval(() => {
+                        this.fetchData();
+                    }, 5000); // 5 seconds
+                },
+                stopAutoRefresh() {
+                    if (this.refreshInterval) {
+                        clearInterval(this.refreshInterval);
+                        this.refreshInterval = null;
+                    }
                 }
             },
             mounted() {
-                this.fetchData();
-
-                // Auto-refresh every 30 seconds
-                setInterval(() => {
+                // Auto-connect if credentials exist
+                if (this.config.token && this.config.repo) {
+                    this.octokit = new Octokit({ auth: this.config.token });
+                    this.connected = true;
                     this.fetchData();
-                }, 30000);
+                    this.startAutoRefresh();
+                }
+            },
+            beforeUnmount() {
+                this.stopAutoRefresh();
             }
         }).mount('#app');
     </script>

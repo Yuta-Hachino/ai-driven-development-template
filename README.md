@@ -388,20 +388,53 @@ pytest tests/test_security.py
 pytest --cov=src --cov-report=html
 ```
 
-## Deployment
+## Deployment & Dashboard
 
-The system supports two deployment architectures:
+### **Enhanced P2P Dashboard - Recommended ✨**
 
-### **Option 1: P2P Architecture (Phase 6) - Recommended ✨**
+**100% Serverless, $0/month, Real-time Monitoring**
 
-Fully decentralized coordination using GitHub as the communication layer. No central server required!
+The Enhanced P2P Dashboard combines the best features from Phase 5 (Grafana metrics), Phase 6 (P2P), and Phase 7 (interactivity) into a single HTML file that runs entirely in your browser.
 
 **Features:**
-- ✅ **$0/month** - Free GitHub Pages dashboard (default)
+- ✅ **$0/month** - No server, no backend, completely free
+- ✅ **Real-time** - 5-second polling via GitHub API (Octokit)
+- ✅ **Rich Visualizations** - Chart.js charts (Grafana-equivalent)
+- ✅ **Interactive** - 3 tabs (Overview, Workflows, P2P Messages)
+- ✅ **Secure** - GitHub token stored locally in browser only
+- ✅ **Mobile Responsive** - Works on all devices
+
+**Quick Start:**
+```bash
+# Option 1: Open locally (no server needed)
+open dashboard/index.html
+
+# Option 2: Deploy to GitHub Pages (free hosting)
+# Settings → Pages → Source: main → /dashboard
+# Your dashboard: https://<username>.github.io/<repo>/
+
+# Option 3: Local server for development
+python -m http.server 8080 --directory dashboard
+```
+
+**Configuration:**
+1. Create GitHub token: https://github.com/settings/tokens (scope: `repo`, `workflow`)
+2. Open dashboard
+3. Enter token and repository (`owner/repo`)
+4. Click "Connect"
+
+**See detailed documentation:** [docs/DASHBOARD_GUIDE.md](docs/DASHBOARD_GUIDE.md)
+
+---
+
+### **P2P Architecture (Phase 6)**
+
+Fully decentralized coordination using GitHub as the communication layer.
+
+**Features:**
 - ✅ **Fully Decentralized** - GitHub handles all coordination
 - ✅ **Scalable** - 1-5 parallel instances via GitHub Actions
-- ✅ **Simple** - No Kubernetes or server management
-- ✅ **Optional Upgrades** - Deploy dynamic dashboard to Cloud Run, VPS, or Lambda
+- ✅ **Simple** - No server management
 
 **Quick Start:**
 ```bash
@@ -409,49 +442,28 @@ Fully decentralized coordination using GitHub as the communication layer. No cen
 # GITHUB_TOKEN with repo access
 
 # 2. Create issue with 'autonomous-dev' label
-# 3. Instances auto-coordinate via P2P
+gh issue create --title "Autonomous Dev" --label "autonomous-dev"
 
-# 4. Deploy dashboard (choose one):
-python scripts/deploy_dashboard.py
-# Options:
-# 1. GitHub Pages (FREE, default)
-# 2. Google Cloud Run ($0-10/month)
-# 3. VPS/Sakura ($4-25/month)
-# 4. AWS Lambda ($0-5/month)
+# 3. Trigger P2P workflow
+gh workflow run p2p-autonomous-dev.yml
 ```
 
 **See detailed documentation:** [docs/P2P_ARCHITECTURE.md](docs/P2P_ARCHITECTURE.md)
 
 ---
 
-### **Option 2: Centralized Kubernetes (Phase 5)**
+### **Kubernetes Deployment (Phase 5) - Enterprise**
 
-Traditional centralized architecture with Kubernetes orchestration.
+For enterprise deployments requiring >5 parallel instances or centralized control.
 
-**When to use:**
-- Enterprise deployments requiring centralized control
-- Need for >5 parallel instances
-- Existing Kubernetes infrastructure
-
-#### Local Docker
+**Cost:** $200-500/month (can be optimized to $266/month)
 
 ```bash
-docker build -f docker/Dockerfile -t autonomous-dev:latest .
-docker run autonomous-dev:latest
-```
-
-#### Kubernetes (GKE)
-
-```bash
+# Deploy to Kubernetes cluster
 kubectl apply -f k8s/production/
-```
 
-#### Cloud Run
-
-```bash
-gcloud run deploy autonomous-dev \
-  --image gcr.io/project/autonomous-dev:latest \
-  --platform managed
+# Note: Prometheus and Grafana have been removed.
+# Use the Enhanced P2P Dashboard instead for monitoring.
 ```
 
 ## Project Structure
@@ -486,23 +498,11 @@ gcloud run deploy autonomous-dev \
 │   ├── cloudrun/              # Google Cloud Run
 │   ├── vps/                   # VPS deployment
 │   └── lambda/                # AWS Lambda
-├── dashboard/                 # GitHub Pages dashboard (Phase 6)
-│   └── index.html             # Default free dashboard
-├── frontend/                  # Real-time UI (Phase 7)
-│   ├── src/
-│   │   ├── components/        # React components
-│   │   ├── hooks/             # Custom React hooks
-│   │   ├── types/             # TypeScript types
-│   │   └── pages/             # Page components
-│   ├── package.json
-│   └── vite.config.ts
-├── backend/                   # FastAPI backend (Phase 7)
-│   ├── api/
-│   │   └── gateway.py         # WebSocket & REST API
-│   └── requirements.txt
+├── dashboard/                 # Enhanced P2P Dashboard (100% serverless)
+│   └── index.html             # Single-file Vue.js app with Octokit
 ├── docs/                      # Documentation
 │   ├── P2P_ARCHITECTURE.md    # P2P architecture guide (Phase 6)
-│   ├── PHASE7_REALTIME_UI.md  # Real-time UI guide (Phase 7)
+│   ├── DASHBOARD_GUIDE.md     # Dashboard setup and usage guide
 │   ├── COMPLIANCE_GOVERNANCE.md
 │   └── COST_OPTIMIZATION.md
 └── .github/workflows/         # CI/CD pipelines
