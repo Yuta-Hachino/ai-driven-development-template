@@ -1,0 +1,9 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: autonomous-dev
+  labels:
+    name: autonomous-dev
+    environment: production
+    security-level: high
