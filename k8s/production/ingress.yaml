@@ -1,0 +1,97 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: autonomous-dev-ingress
+  namespace: autonomous-dev-prod
+  labels:
+    app: autonomous-dev
+    environment: production
+  annotations:
+    # Ingress class
+    kubernetes.io/ingress.class: "nginx"
+
+    # TLS/SSL
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+
+    # Security headers
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://autonomous-dev.example.com"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/limit-connections: "100"
+
+    # Timeouts
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+
+    # Body size
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+
+    # Additional security
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+      more_set_headers "Referrer-Policy: strict-origin-when-cross-origin";
+      more_set_headers "Permissions-Policy: geolocation=(), microphone=(), camera=()";
+      more_set_headers "Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';";
+
+    # Monitoring
+    nginx.ingress.kubernetes.io/enable-access-log: "true"
+    nginx.ingress.kubernetes.io/enable-rewrite-log: "true"
+
+spec:
+  tls:
+  - hosts:
+    - autonomous-dev.example.com
+    - api.autonomous-dev.example.com
+    secretName: autonomous-dev-tls
+
+  rules:
+  - host: autonomous-dev.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: autonomous-dev
+            port:
+              name: http
+
+  - host: api.autonomous-dev.example.com
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: autonomous-dev
+            port:
+              name: http
+
+      - path: /health
+        pathType: Prefix
+        backend:
+          service:
+            name: autonomous-dev
+            port:
+              name: http
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: autonomous-dev-tls
+  namespace: autonomous-dev-prod
+type: kubernetes.io/tls
+data:
+  # These should be replaced with actual certificates
+  # Use cert-manager for automatic certificate management
+  tls.crt: LS0tLS1CRUdJTi...  # Base64 encoded certificate
+  tls.key: LS0tLS1CRUdJTi...  # Base64 encoded private key

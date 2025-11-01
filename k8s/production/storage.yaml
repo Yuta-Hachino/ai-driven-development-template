@@ -1,0 +1,170 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: autonomous-dev-ssd
+  labels:
+    app: autonomous-dev
+    environment: production
+provisioner: kubernetes.io/gce-pd  # GCP Persistent Disk
+parameters:
+  type: pd-ssd
+  replication-type: regional-pd
+  fstype: ext4
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain  # Retain for production data safety
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: autonomous-dev-standard
+  labels:
+    app: autonomous-dev
+    environment: production
+provisioner: kubernetes.io/gce-pd
+parameters:
+  type: pd-standard
+  replication-type: regional-pd
+  fstype: ext4
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: autonomous-dev-data-pvc
+  namespace: autonomous-dev-prod
+  labels:
+    app: autonomous-dev
+    environment: production
+    data-type: application-data
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: autonomous-dev-ssd
+  resources:
+    requests:
+      storage: 100Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: autonomous-dev-logs-pvc
+  namespace: autonomous-dev-prod
+  labels:
+    app: autonomous-dev
+    environment: production
+    data-type: logs
+spec:
+  accessModes:
+  - ReadWriteMany  # Allow multiple pods to write logs
+  storageClassName: autonomous-dev-standard
+  resources:
+    requests:
+      storage: 50Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: autonomous-dev-backup-pvc
+  namespace: autonomous-dev-prod
+  labels:
+    app: autonomous-dev
+    environment: production
+    data-type: backups
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: autonomous-dev-standard
+  resources:
+    requests:
+      storage: 200Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: autonomous-dev-backup
+  namespace: autonomous-dev-prod
+  labels:
+    app: autonomous-dev
+    component: backup
+    environment: production
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:
+            app: autonomous-dev
+            component: backup
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: autonomous-dev-backup-sa
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+          containers:
+          - name: backup
+            image: google/cloud-sdk:alpine
+            command:
+            - /bin/sh
+            - -c
+            - |
+              #!/bin/sh
+              set -e
+
+              TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+              BACKUP_DIR="/backup/$TIMESTAMP"
+
+              echo "Starting backup at $TIMESTAMP"
+
+              # Create backup directory
+              mkdir -p "$BACKUP_DIR"
+
+              # Backup data
+              tar -czf "$BACKUP_DIR/data.tar.gz" -C /data .
+
+              # Upload to cloud storage (GCS example)
+              gsutil cp "$BACKUP_DIR/data.tar.gz" "gs://autonomous-dev-backups/production/$TIMESTAMP/"
+
+              # Cleanup old local backups (keep last 3)
+              ls -t /backup | tail -n +4 | xargs -I {} rm -rf /backup/{}
+
+              echo "Backup completed successfully"
+
+            volumeMounts:
+            - name: data-volume
+              mountPath: /data
+              readOnly: true
+            - name: backup-volume
+              mountPath: /backup
+
+            resources:
+              requests:
+                cpu: "500m"
+                memory: "1Gi"
+              limits:
+                cpu: "2"
+                memory: "4Gi"
+
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                - ALL
+              readOnlyRootFilesystem: true
+
+          volumes:
+          - name: data-volume
+            persistentVolumeClaim:
+              claimName: autonomous-dev-data-pvc
+          - name: backup-volume
+            persistentVolumeClaim:
+              claimName: autonomous-dev-backup-pvc

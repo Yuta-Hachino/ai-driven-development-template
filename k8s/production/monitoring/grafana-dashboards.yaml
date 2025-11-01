@@ -1,0 +1,307 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-config
+  namespace: autonomous-dev-prod
+  labels:
+    app: grafana
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      editable: true
+      options:
+        path: /var/lib/grafana/dashboards
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: autonomous-dev-prod
+  labels:
+    app: grafana
+data:
+  autonomous-dev-overview.json: |
+    {
+      "dashboard": {
+        "title": "Autonomous Dev - Overview",
+        "tags": ["autonomous-dev", "overview"],
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Active Instances",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "count(up{job=\"autonomous-dev\", environment=\"production\"} == 1)"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {"value": null, "color": "red"},
+                    {"value": 1, "color": "yellow"},
+                    {"value": 3, "color": "green"}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 2,
+            "title": "Request Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(http_requests_total{job=\"autonomous-dev\"}[5m])"
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "title": "Error Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(http_requests_total{job=\"autonomous-dev\", status=~\"5..\"}[5m])"
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "title": "Response Time (p95)",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"autonomous-dev\"}[5m]))"
+              }
+            ]
+          },
+          {
+            "id": 5,
+            "title": "CPU Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(container_cpu_usage_seconds_total{namespace=\"autonomous-dev-prod\", pod=~\"autonomous-dev-.*\"}[5m])"
+              }
+            ]
+          },
+          {
+            "id": 6,
+            "title": "Memory Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "container_memory_usage_bytes{namespace=\"autonomous-dev-prod\", pod=~\"autonomous-dev-.*\"}"
+              }
+            ]
+          },
+          {
+            "id": 7,
+            "title": "Active Worktrees",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "autonomous_dev_worktrees_active_total"
+              }
+            ]
+          },
+          {
+            "id": 8,
+            "title": "Task Completion Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(autonomous_dev_tasks_completed_total[5m])"
+              }
+            ]
+          }
+        ],
+        "refresh": "30s"
+      }
+    }
+
+  autonomous-dev-agents.json: |
+    {
+      "dashboard": {
+        "title": "Autonomous Dev - Agents",
+        "tags": ["autonomous-dev", "agents"],
+        "panels": [
+          {
+            "id": 1,
+            "title": "Agent Execution Time",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(autonomous_dev_agent_execution_duration_seconds_sum[5m]) / rate(autonomous_dev_agent_execution_duration_seconds_count[5m])"
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "title": "Agent Success Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(autonomous_dev_agent_executions_total{status=\"success\"}[5m]) / rate(autonomous_dev_agent_executions_total[5m])"
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "title": "Active Agents by Type",
+            "type": "piechart",
+            "targets": [
+              {
+                "expr": "sum by (agent_type) (autonomous_dev_agents_active)"
+              }
+            ]
+          }
+        ]
+      }
+    }
+
+  autonomous-dev-worktrees.json: |
+    {
+      "dashboard": {
+        "title": "Autonomous Dev - Worktrees",
+        "tags": ["autonomous-dev", "worktrees"],
+        "panels": [
+          {
+            "id": 1,
+            "title": "Worktree Operations",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(autonomous_dev_worktree_operations_total[5m])",
+                "legendFormat": "{{operation}}"
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "title": "Worktrees by Pattern",
+            "type": "piechart",
+            "targets": [
+              {
+                "expr": "sum by (pattern) (autonomous_dev_worktrees_active)"
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "title": "Worktree Creation Time",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(autonomous_dev_worktree_creation_duration_seconds_bucket[5m]))"
+              }
+            ]
+          }
+        ]
+      }
+    }
+
+  autonomous-dev-healing.json: |
+    {
+      "dashboard": {
+        "title": "Autonomous Dev - Self-Healing",
+        "tags": ["autonomous-dev", "healing"],
+        "panels": [
+          {
+            "id": 1,
+            "title": "Healing Success Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(autonomous_dev_healing_attempts_total{status=\"success\"}[5m]) / rate(autonomous_dev_healing_attempts_total[5m])"
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "title": "Failures by Type",
+            "type": "piechart",
+            "targets": [
+              {
+                "expr": "sum by (failure_type) (autonomous_dev_failures_detected_total)"
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "title": "Healing Time",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(autonomous_dev_healing_duration_seconds_bucket[5m]))"
+              }
+            ]
+          }
+        ]
+      }
+    }
+
+  kubernetes-cluster.json: |
+    {
+      "dashboard": {
+        "title": "Kubernetes - Cluster Overview",
+        "tags": ["kubernetes", "cluster"],
+        "panels": [
+          {
+            "id": 1,
+            "title": "Node CPU Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m]))"
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "title": "Node Memory Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)"
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "title": "Pod Count by Namespace",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "sum by (namespace) (kube_pod_info)"
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "title": "Disk I/O",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(node_disk_read_bytes_total[5m])",
+                "legendFormat": "Read"
+              },
+              {
+                "expr": "rate(node_disk_written_bytes_total[5m])",
+                "legendFormat": "Write"
+              }
+            ]
+          }
+        ]
+      }
+    }

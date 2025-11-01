@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: autonomous-dev-prod
+  labels:
+    name: autonomous-dev-prod
+    environment: production
+    managed-by: kubernetes
+  annotations:
+    description: "Production namespace for autonomous development system"
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: prod-resource-quota
+  namespace: autonomous-dev-prod
+spec:
+  hard:
+    requests.cpu: "100"
+    requests.memory: "200Gi"
+    requests.storage: "1Ti"
+    persistentvolumeclaims: "50"
+    pods: "100"
+    services: "50"
+    secrets: "100"
+    configmaps: "100"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: prod-limit-range
+  namespace: autonomous-dev-prod
+spec:
+  limits:
+  - max:
+      cpu: "8"
+      memory: "16Gi"
+    min:
+      cpu: "100m"
+      memory: "128Mi"
+    default:
+      cpu: "1"
+      memory: "2Gi"
+    defaultRequest:
+      cpu: "500m"
+      memory: "1Gi"
+    type: Container
+  - max:
+      cpu: "16"
+      memory: "32Gi"
+    min:
+      cpu: "200m"
+      memory: "256Mi"
+    type: Pod
