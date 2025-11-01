@@ -1,0 +1,204 @@
+# Parallel Execution Configuration
+# Settings for multi-instance Claude Code coordination
+
+# Multi-Instance Manager Settings
+multi_instance:
+  # Maximum number of concurrent instances
+  max_instances: 10
+
+  # Maximum concurrent tasks per instance
+  max_tasks_per_instance: 3
+
+  # Task assignment strategy
+  # Options: round_robin, skill_based, load_balanced, priority_first
+  assignment_strategy: load_balanced
+
+  # Instance health check interval (seconds)
+  health_check_interval: 60
+
+  # Instance timeout (seconds) - mark instance as inactive after this period
+  instance_timeout: 300
+
+# Worktree Management
+worktree:
+  # Base directory for worktrees
+  base_dir: .worktrees
+
+  # Automatically cleanup completed worktrees
+  auto_cleanup: true
+
+  # Cleanup delay after completion (hours)
+  cleanup_delay_hours: 24
+
+  # Maximum worktrees per instance
+  max_worktrees_per_instance: 5
+
+  # Lock timeout (minutes) - release lock if instance fails
+  lock_timeout_minutes: 60
+
+# Coordination Settings
+coordination:
+  # Communication method
+  # Options: file_based, github_issues, redis, rabbitmq
+  method: file_based
+
+  # Message queue settings (for file_based)
+  message_queue:
+    file_path: docs/shared_knowledge/coordination_messages.jsonl
+    max_messages: 10000
+    cleanup_interval_hours: 168  # 1 week
+
+  # Shared state settings
+  shared_state:
+    file_path: docs/shared_knowledge/shared_state.json
+    update_interval_seconds: 5
+    lock_timeout_seconds: 30
+
+  # GitHub Issues settings (if method: github_issues)
+  github_issues:
+    label: coordination
+    auto_close_completed: true
+    comment_updates: true
+
+# Task Distribution
+task_distribution:
+  # Load balancing algorithm
+  # Options: least_loaded, skill_match, random, round_robin
+  algorithm: skill_match
+
+  # Priority weights
+  priority_weights:
+    critical: 10
+    high: 7
+    medium: 5
+    low: 2
+
+  # Skill matching preferences
+  skill_matching:
+    enabled: true
+    strict_mode: false  # If true, only assign to instances with exact skills
+    skill_weight: 0.6  # Weight for skill matching (0-1)
+    workload_weight: 0.4  # Weight for workload balancing (0-1)
+
+  # Dependency handling
+  dependencies:
+    auto_resolve: true
+    parallel_execution: true  # Execute independent tasks in parallel
+    max_dependency_depth: 10
+
+# Resource Management
+resources:
+  # CPU limits per instance (cores)
+  cpu_limit: 2.0
+
+  # Memory limits per instance (GB)
+  memory_limit: 4.0
+
+  # Disk space limit per worktree (GB)
+  disk_limit: 10.0
+
+  # Network bandwidth limit (Mbps)
+  bandwidth_limit: 100
+
+# Monitoring
+monitoring:
+  # Enable metrics collection
+  enabled: true
+
+  # Metrics collection interval (seconds)
+  interval_seconds: 30
+
+  # Metrics to collect
+  metrics:
+    - instance_count
+    - task_completion_rate
+    - average_task_duration
+    - error_rate
+    - resource_utilization
+
+  # Export metrics to file
+  export_to_file: true
+  export_path: docs/monitoring/metrics.jsonl
+
+# Conflict Resolution
+conflict_resolution:
+  # Auto-merge strategy
+  # Options: auto, manual, instance_priority, newest_wins, oldest_wins
+  strategy: auto
+
+  # Conflict detection
+  detection:
+    enabled: true
+    check_interval_seconds: 60
+
+  # Resolution rules
+  rules:
+    - type: file_modification
+      action: merge_if_possible
+      fallback: create_pr
+
+    - type: dependency_conflict
+      action: notify_instances
+      fallback: escalate_to_human
+
+    - type: resource_lock
+      action: respect_lock
+      timeout_minutes: 30
+
+# Fault Tolerance
+fault_tolerance:
+  # Retry failed tasks
+  retry_enabled: true
+  max_retries: 3
+  retry_delay_seconds: 60
+
+  # Reassign tasks from failed instances
+  auto_reassign: true
+  reassign_delay_seconds: 120
+
+  # Instance recovery
+  recovery:
+    enabled: true
+    health_check_interval_seconds: 30
+    recovery_timeout_seconds: 300
+
+# Performance Tuning
+performance:
+  # Batch operations
+  batch_size: 10
+  batch_timeout_seconds: 5
+
+  # Caching
+  cache_enabled: true
+  cache_ttl_seconds: 300
+
+  # Parallel processing
+  parallel_workers: 4
+
+# Security
+security:
+  # Instance authentication
+  require_authentication: false
+
+  # Encrypted communication
+  encrypt_messages: false
+
+  # Access control
+  rbac_enabled: false
+
+# Logging
+logging:
+  # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: INFO
+
+  # Log to file
+  file_enabled: true
+  file_path: logs/parallel_execution.log
+
+  # Log rotation
+  max_file_size_mb: 100
+  max_backup_files: 5
+
+  # Structured logging
+  structured: true
+  format: json

@@ -18,9 +18,14 @@ The Autonomous Development Repository System is a cutting-edge platform that com
 ### Key Features
 
 - ✅ **Fully Autonomous Development** - AI agents handle development, testing, and deployment
+- ✅ **Multi-Instance Coordination** - Multiple Claude Code instances working in parallel
 - ✅ **Multi-Pattern Worktrees** - Competition, Parallel, A/B Testing, Role-based, Branch Tree
 - ✅ **Enterprise Security** - gVisor sandboxing, encryption, MFA, RBAC, audit logging
 - ✅ **Intelligent Evaluation** - Automated code quality, performance, and security assessment
+- ✅ **Self-Healing System** - Automatic failure detection and recovery
+- ✅ **Project Memory** - Shared knowledge base and context preservation
+- ✅ **Tech Lead Management** - Intelligent task planning and assignment
+- ✅ **Auto-Documentation** - Keep documentation in sync with code
 - ✅ **Cloud-Native** - Designed for GCP with Kubernetes support
 - ✅ **Comprehensive Testing** - 90%+ test coverage with security scanning
 
@@ -77,6 +82,10 @@ pytest
 ┌─────────────────────────────────────────────────────────────┐
 │                     Autonomous Dev System                    │
 ├─────────────────────────────────────────────────────────────┤
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │         Multi-Instance Coordination Layer             │  │
+│  │  • Task Distribution  • Load Balancing  • Messaging   │  │
+│  └───────────────────────────────────────────────────────┘  │
 │                                                               │
 │  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐   │
 │  │ Development   │  │  Management   │  │   Security    │   │
@@ -87,6 +96,12 @@ pytest
 │  │ • Algorithm   │  │ • Integration │  │ • Audit Log   │   │
 │  │ • DevOps      │  │ • Monitoring  │  │ • Compliance  │   │
 │  └───────────────┘  └───────────────┘  └───────────────┘   │
+│                                                               │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │         Autonomous Intelligence Layer                  │  │
+│  │ • Tech Lead System  • Self-Healing  • Auto-Docs       │  │
+│  │ • Project Memory    • Notifications • Bottleneck Det. │  │
+│  └───────────────────────────────────────────────────────┘  │
 │                                                               │
 ├─────────────────────────────────────────────────────────────┤
 │                    Worktree Management                        │
@@ -157,6 +172,121 @@ Exploratory development with intelligent pruning.
 
 All agents run in gVisor sandboxed containers for enhanced security.
 
+## Phase 2.5 Features - Multi-Instance Collaboration
+
+### Multi-Instance Coordination
+
+Coordinate multiple Claude Code instances working in parallel:
+
+```python
+from src.parallel_execution import MultiInstanceManager, InstanceConfig
+
+manager = MultiInstanceManager()
+
+# Register instances
+instance = InstanceConfig(
+    instance_id=1,
+    name="Frontend-Specialist",
+    capabilities=["frontend", "ui", "react"],
+    status="active",
+    max_concurrent_tasks=2
+)
+manager.register_instance(instance)
+
+# Auto-assign tasks with skill matching and load balancing
+assignments = manager.auto_assign_tasks()
+```
+
+### Project Memory System
+
+Preserve and share knowledge across instances:
+
+```python
+from src.memory import ProjectMemory, KnowledgeType
+
+memory = ProjectMemory(project_root=".")
+
+# Record architectural decision
+memory.record_decision(
+    title="Use PostgreSQL",
+    decision="Adopt PostgreSQL for primary database",
+    rationale="Strong ACID compliance and JSON support",
+    decided_by="tech_lead",
+    alternatives=["MySQL", "MongoDB"]
+)
+
+# Search knowledge base
+results = memory.search_entries(query="database", limit=10)
+```
+
+### Tech Lead Management
+
+Intelligent task planning and coordination:
+
+```python
+from src.management import TechLeadSystem, TaskPlanner, PlanningStrategy
+
+planner = TaskPlanner()
+tech_lead = TechLeadSystem(project_root=".")
+
+# Create task plan with multiple strategies
+tasks = planner.create_feature_plan(
+    feature_name="User Authentication",
+    feature_description="OAuth 2.0 authentication",
+    strategy=PlanningStrategy.FEATURE_FIRST,
+    estimated_complexity="medium"
+)
+
+# Track progress
+report = tech_lead.generate_progress_report()
+print(f"Completion: {report.overall_completion}%")
+```
+
+### Notification Hub
+
+Multi-channel alerting and monitoring:
+
+```python
+from src.monitoring import NotificationHub, NotificationPriority
+
+hub = NotificationHub(project_root=".")
+
+# Send notification
+hub.send_notification(
+    title="Build Failed",
+    message="CI/CD pipeline failed with 3 errors",
+    priority=NotificationPriority.HIGH,
+    channels=["github_issue", "console"]
+)
+
+# Create alert rules
+hub.create_alert_rule(
+    name="High blocked tasks",
+    condition="tasks_blocked > 3",
+    priority=NotificationPriority.HIGH,
+    channels=["github_issue"]
+)
+```
+
+### Auto-Documentation
+
+Keep documentation synchronized with code:
+
+```python
+from src.documentation import AutoDocumenter
+
+documenter = AutoDocumenter(project_root=".")
+
+# Generate API docs from code
+documenter.generate_api_documentation()
+
+# Generate changelog from git commits
+documenter.generate_changelog()
+
+# Update README
+documenter.update_readme()
+```
+
 ## Configuration Files
 
 ### `config/agents.yaml`
@@ -170,6 +300,14 @@ Security settings including encryption, authentication, RBAC, and audit policies
 ### `config/worktree.yaml`
 
 Worktree patterns, evaluation criteria, and resource management settings.
+
+### `config/parallel_execution.yaml`
+
+Multi-instance coordination, task distribution, and resource management.
+
+### `config/alerting_rules.yaml`
+
+Alert rules, notification channels, and escalation policies.
 
 ## Usage Examples
 
@@ -275,19 +413,29 @@ gcloud run deploy autonomous-dev \
 
 ```
 .
-├── config/                 # Configuration files
+├── config/                      # Configuration files
 │   ├── agents.yaml
 │   ├── security.yaml
-│   └── worktree.yaml
-├── src/                   # Source code
-│   ├── agents/           # Agent implementations
-│   ├── worktree/         # Worktree management
-│   ├── security/         # Security modules
-│   └── utils/            # Utilities
-├── tests/                # Test suite
-├── scripts/              # Utility scripts
-├── docker/               # Docker configuration
-└── .github/workflows/    # CI/CD pipelines
+│   ├── worktree.yaml
+│   ├── parallel_execution.yaml  # Phase 2.5
+│   └── alerting_rules.yaml      # Phase 2.5
+├── src/                        # Source code
+│   ├── agents/                 # Agent implementations
+│   ├── worktree/               # Worktree management
+│   ├── security/               # Security modules
+│   ├── autonomous/             # Self-healing (Phase 2)
+│   ├── parallel_execution/     # Multi-instance (Phase 2.5)
+│   ├── memory/                 # Project memory (Phase 2.5)
+│   ├── management/             # Tech lead system (Phase 2.5)
+│   ├── monitoring/             # Notifications (Phase 2.5)
+│   └── documentation/          # Auto-docs (Phase 2.5)
+├── tests/                     # Test suite
+├── examples/                  # Usage examples
+├── scripts/                   # Utility scripts
+├── docker/                    # Docker configuration
+├── k8s/                       # Kubernetes manifests
+├── dashboard/                 # Progress monitoring
+└── .github/workflows/         # CI/CD pipelines
 ```
 
 ## Contributing

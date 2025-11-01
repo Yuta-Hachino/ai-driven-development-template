@@ -1,0 +1,333 @@
+# Alerting Rules Configuration
+# Define alert conditions and notification channels
+
+# Default notification channels
+default_channels:
+  - console
+  - github_issue
+
+# Alert rules
+rules:
+  # Development Progress Alerts
+  - id: high_blocked_tasks
+    name: High number of blocked tasks
+    description: Alert when too many tasks are blocked
+    condition: tasks_blocked > 3
+    priority: high
+    channels:
+      - github_issue
+      - console
+    cooldown_minutes: 60
+    enabled: true
+    metadata:
+      category: progress
+      escalation_path: tech_lead
+
+  - id: low_velocity
+    name: Low development velocity
+    description: Alert when velocity drops below threshold
+    condition: velocity < 1.0 and total_tasks > 10
+    priority: medium
+    channels:
+      - console
+    cooldown_minutes: 120
+    enabled: true
+    metadata:
+      category: progress
+
+  - id: stalled_tasks
+    name: Tasks stalled for too long
+    description: Alert when tasks are in progress for >2 days
+    condition: max_task_duration_hours > 48
+    priority: medium
+    channels:
+      - github_issue
+      - console
+    cooldown_minutes: 360
+    enabled: true
+    metadata:
+      category: progress
+
+  # Instance Management Alerts
+  - id: instance_overloaded
+    name: Instance overloaded
+    description: Alert when instance has too many concurrent tasks
+    condition: max_instance_workload > 5
+    priority: medium
+    channels:
+      - console
+    cooldown_minutes: 30
+    enabled: true
+    metadata:
+      category: instance
+      auto_action: redistribute_tasks
+
+  - id: instance_idle
+    name: Instances sitting idle
+    description: Alert when instances are idle while tasks are pending
+    condition: idle_instances > 0 and pending_tasks > 0
+    priority: low
+    channels:
+      - console
+    cooldown_minutes: 60
+    enabled: true
+    metadata:
+      category: instance
+      auto_action: assign_tasks
+
+  - id: instance_failure
+    name: Instance failure detected
+    description: Alert when instance stops responding
+    condition: failed_instances > 0
+    priority: critical
+    channels:
+      - github_issue
+      - console
+    cooldown_minutes: 15
+    enabled: true
+    metadata:
+      category: instance
+      auto_action: reassign_tasks
+
+  # CI/CD Alerts
+  - id: ci_failure
+    name: CI/CD pipeline failure
+    description: Alert when CI/CD pipeline fails
+    condition: ci_status == 'failed'
+    priority: high
+    channels:
+      - github_issue
+      - console
+    cooldown_minutes: 15
+    enabled: true
+    metadata:
+      category: cicd
+      auto_action: trigger_auto_fix
+
+  - id: test_coverage_drop
+    name: Test coverage dropped
+    description: Alert when test coverage falls below threshold
+    condition: test_coverage < 90
+    priority: medium
+    channels:
+      - github_issue
+      - console
+    cooldown_minutes: 120
+    enabled: true
+    metadata:
+      category: quality
+
+  - id: security_vulnerability
+    name: Security vulnerability detected
+    description: Alert when security scan finds vulnerabilities
+    condition: security_vulnerabilities > 0
+    priority: critical
+    channels:
+      - github_issue
+      - console
+    cooldown_minutes: 0  # No cooldown for security
+    enabled: true
+    metadata:
+      category: security
+      auto_action: create_security_issue
+
+  # Resource Alerts
+  - id: high_resource_usage
+    name: High resource usage
+    description: Alert when resource usage is high
+    condition: cpu_usage > 80 or memory_usage > 80
+    priority: medium
+    channels:
+      - console
+    cooldown_minutes: 30
+    enabled: true
+    metadata:
+      category: resources
+
+  - id: disk_space_low
+    name: Low disk space
+    description: Alert when disk space is running low
+    condition: disk_usage > 90
+    priority: high
+    channels:
+      - github_issue
+      - console
+    cooldown_minutes: 60
+    enabled: true
+    metadata:
+      category: resources
+      auto_action: cleanup_worktrees
+
+  # Conflict Alerts
+  - id: merge_conflicts
+    name: Merge conflicts detected
+    description: Alert when merge conflicts occur
+    condition: merge_conflicts > 0
+    priority: medium
+    channels:
+      - github_issue
+      - console
+    cooldown_minutes: 30
+    enabled: true
+    metadata:
+      category: conflicts
+      auto_action: attempt_auto_resolution
+
+  - id: dependency_conflicts
+    name: Dependency conflicts detected
+    description: Alert when task dependencies conflict
+    condition: dependency_conflicts > 0
+    priority: high
+    channels:
+      - github_issue
+      - console
+    cooldown_minutes: 60
+    enabled: true
+    metadata:
+      category: conflicts
+
+  # Quality Alerts
+  - id: code_quality_decline
+    name: Code quality declining
+    description: Alert when code quality metrics drop
+    condition: code_quality_score < 80
+    priority: medium
+    channels:
+      - console
+    cooldown_minutes: 240
+    enabled: true
+    metadata:
+      category: quality
+
+  - id: high_complexity
+    name: High code complexity detected
+    description: Alert when code complexity is too high
+    condition: avg_complexity > 15
+    priority: low
+    channels:
+      - console
+    cooldown_minutes: 360
+    enabled: true
+    metadata:
+      category: quality
+
+  # Bottleneck Alerts
+  - id: long_dependency_chain
+    name: Long dependency chain detected
+    description: Alert when dependency chain is too long
+    condition: max_dependency_chain > 5
+    priority: medium
+    channels:
+      - console
+    cooldown_minutes: 120
+    enabled: true
+    metadata:
+      category: bottleneck
+
+  - id: critical_path_delay
+    name: Critical path delayed
+    description: Alert when critical path tasks are delayed
+    condition: critical_path_delay > 24
+    priority: high
+    channels:
+      - github_issue
+      - console
+    cooldown_minutes: 120
+    enabled: true
+    metadata:
+      category: bottleneck
+
+# Notification Channel Configurations
+channels:
+  github_issue:
+    enabled: true
+    default_labels:
+      - alert
+      - automated
+    auto_close: false
+
+  github_comment:
+    enabled: true
+    mention_users: []
+
+  slack:
+    enabled: false
+    webhook_url: ${SLACK_WEBHOOK_URL}
+    channel: #autonomous-dev
+    username: Autonomous Dev Bot
+    icon_emoji: :robot_face:
+
+  email:
+    enabled: false
+    smtp_host: ${SMTP_HOST}
+    smtp_port: 587
+    use_tls: true
+    from_address: ${EMAIL_FROM}
+    to_address: ${EMAIL_TO}
+    username: ${EMAIL_USERNAME}
+    password: ${EMAIL_PASSWORD}
+
+  webhook:
+    enabled: false
+    url: ${WEBHOOK_URL}
+    method: POST
+    headers:
+      Content-Type: application/json
+    timeout_seconds: 10
+
+  console:
+    enabled: true
+    color_output: true
+
+# Escalation Policies
+escalation:
+  # Escalate to human after failed auto-actions
+  enabled: true
+
+  # Number of alert repetitions before escalation
+  threshold: 3
+
+  # Time window for counting repetitions (hours)
+  window_hours: 24
+
+  # Escalation actions
+  actions:
+    - create_high_priority_issue
+    - notify_maintainers
+    - pause_automation
+
+# Alert Aggregation
+aggregation:
+  # Group similar alerts together
+  enabled: true
+
+  # Time window for aggregation (minutes)
+  window_minutes: 15
+
+  # Maximum alerts in aggregated message
+  max_alerts: 10
+
+# Alert History
+history:
+  # Keep alert history
+  enabled: true
+
+  # History retention (days)
+  retention_days: 90
+
+  # History file path
+  file_path: docs/monitoring/alert_history.jsonl
+
+# Maintenance Windows
+maintenance_windows:
+  # Suppress alerts during maintenance
+  enabled: false
+
+  # Scheduled maintenance windows
+  schedules: []
+    # Example:
+    # - start: "2025-11-01T00:00:00"
+    #   end: "2025-11-01T02:00:00"
+    #   suppress_priorities:
+    #     - low
+    #     - medium

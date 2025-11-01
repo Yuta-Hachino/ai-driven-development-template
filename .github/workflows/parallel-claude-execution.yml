@@ -1,0 +1,444 @@
+name: Parallel Claude Code Execution
+
+on:
+  workflow_dispatch:
+    inputs:
+      feature_name:
+        description: 'Feature name to develop'
+        required: true
+        type: string
+      planning_strategy:
+        description: 'Planning strategy'
+        required: true
+        type: choice
+        options:
+          - feature_first
+          - waterfall
+          - agile
+          - test_driven
+          - risk_driven
+        default: 'feature_first'
+      num_instances:
+        description: 'Number of Claude Code instances to run in parallel'
+        required: true
+        type: number
+        default: 3
+      complexity:
+        description: 'Feature complexity'
+        required: true
+        type: choice
+        options:
+          - low
+          - medium
+          - high
+          - very_high
+        default: 'medium'
+  issue_comment:
+    types: [created]
+
+jobs:
+  # Job 1: Plan tasks
+  plan-tasks:
+    name: Create Task Plan
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issue_comment' &&
+       startsWith(github.event.comment.body, '/parallel-dev'))
+    outputs:
+      plan_id: ${{ steps.plan.outputs.plan_id }}
+      task_count: ${{ steps.plan.outputs.task_count }}
+      task_matrix: ${{ steps.plan.outputs.task_matrix }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Parse issue command
+        if: github.event_name == 'issue_comment'
+        id: parse_command
+        run: |
+          COMMENT="${{ github.event.comment.body }}"
+          echo "Full command: $COMMENT"
+
+          # Extract parameters from comment
+          # Example: /parallel-dev feature="User Authentication" strategy=agile instances=3 complexity=medium
+          FEATURE=$(echo "$COMMENT" | grep -oP 'feature="?\K[^"]+' || echo "New Feature")
+          STRATEGY=$(echo "$COMMENT" | grep -oP 'strategy=\K\w+' || echo "feature_first")
+          INSTANCES=$(echo "$COMMENT" | grep -oP 'instances=\K\d+' || echo "3")
+          COMPLEXITY=$(echo "$COMMENT" | grep -oP 'complexity=\K\w+' || echo "medium")
+
+          echo "feature=$FEATURE" >> $GITHUB_OUTPUT
+          echo "strategy=$STRATEGY" >> $GITHUB_OUTPUT
+          echo "instances=$INSTANCES" >> $GITHUB_OUTPUT
+          echo "complexity=$COMPLEXITY" >> $GITHUB_OUTPUT
+
+      - name: Create task plan
+        id: plan
+        env:
+          FEATURE_NAME: ${{ github.event.inputs.feature_name || steps.parse_command.outputs.feature }}
+          STRATEGY: ${{ github.event.inputs.planning_strategy || steps.parse_command.outputs.strategy }}
+          COMPLEXITY: ${{ github.event.inputs.complexity || steps.parse_command.outputs.complexity }}
+        run: |
+          python3 <<'EOF'
+          import json
+          import os
+          import sys
+          sys.path.insert(0, 'src')
+
+          from management import TaskPlanner, PlanningStrategy, TechLeadSystem
+
+          # Get inputs
+          feature_name = os.environ['FEATURE_NAME']
+          strategy_str = os.environ['STRATEGY']
+          complexity = os.environ['COMPLEXITY']
+
+          # Map strategy
+          strategy_map = {
+              'waterfall': PlanningStrategy.WATERFALL,
+              'agile': PlanningStrategy.AGILE,
+              'feature_first': PlanningStrategy.FEATURE_FIRST,
+              'test_driven': PlanningStrategy.TEST_DRIVEN,
+              'risk_driven': PlanningStrategy.RISK_DRIVEN
+          }
+          strategy = strategy_map.get(strategy_str, PlanningStrategy.FEATURE_FIRST)
+
+          # Create planner
+          planner = TaskPlanner()
+
+          # Generate task breakdown
+          tasks = planner.create_feature_plan(
+              feature_name=feature_name,
+              feature_description=f"Implement {feature_name}",
+              strategy=strategy,
+              estimated_complexity=complexity
+          )
+
+          # Create plan in Tech Lead System
+          tech_lead = TechLeadSystem(project_root='.')
+          plan = tech_lead.create_task_plan(
+              feature_name=feature_name,
+              description=f"Implement {feature_name} using {strategy_str} strategy",
+              created_by="github-actions",
+              tasks=tasks
+          )
+
+          # Prepare task matrix for parallel execution
+          task_matrix = []
+          for task in tasks:
+              task_matrix.append({
+                  'task_id': task.task_id,
+                  'title': task.title,
+                  'estimated_hours': task.estimated_hours,
+                  'required_skills': task.required_skills,
+                  'dependencies': task.dependencies
+              })
+
+          # Output for next job
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f"plan_id={plan.plan_id}\n")
+              f.write(f"task_count={len(tasks)}\n")
+              f.write(f"task_matrix={json.dumps(task_matrix)}\n")
+
+          print(f"✓ Created plan {plan.plan_id} with {len(tasks)} tasks")
+          for task in tasks:
+              print(f"  - {task.task_id}: {task.title}")
+          EOF
+
+      - name: Comment plan on issue
+        if: github.event_name == 'issue_comment'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const planId = '${{ steps.plan.outputs.plan_id }}';
+            const taskCount = '${{ steps.plan.outputs.task_count }}';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🤖 **Task Plan Created**\n\nPlan ID: \`${planId}\`\nTasks: ${taskCount}\n\nParallel execution starting...`
+            });
+
+  # Job 2: Execute tasks in parallel
+  execute-tasks:
+    name: Execute Task
+    needs: plan-tasks
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 5
+      fail-fast: false
+      matrix:
+        instance_id: [1, 2, 3, 4, 5]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create instance worktree
+        run: |
+          git config user.name "Claude Code Instance ${{ matrix.instance_id }}"
+          git config user.email "claude-${{ matrix.instance_id }}@autonomous-dev.local"
+
+          # Instance will work in its own worktree
+          WORKTREE_NAME="instance-${{ matrix.instance_id }}-${{ github.run_id }}"
+          echo "WORKTREE_NAME=$WORKTREE_NAME" >> $GITHUB_ENV
+
+      - name: Register instance and claim tasks
+        id: claim_tasks
+        env:
+          INSTANCE_ID: ${{ matrix.instance_id }}
+          PLAN_ID: ${{ needs.plan-tasks.outputs.plan_id }}
+          TASK_MATRIX: ${{ needs.plan-tasks.outputs.task_matrix }}
+        run: |
+          python3 <<'EOF'
+          import json
+          import os
+          import sys
+          sys.path.insert(0, 'src')
+
+          from parallel_execution import MultiInstanceManager, InstanceConfig
+          from management import TechLeadSystem
+
+          instance_id = int(os.environ['INSTANCE_ID'])
+          plan_id = os.environ['PLAN_ID']
+
+          # Register instance
+          manager = MultiInstanceManager()
+          config = InstanceConfig(
+              instance_id=instance_id,
+              name=f"Instance-{instance_id}",
+              capabilities=["backend", "frontend", "testing", "documentation"],
+              status="active",
+              max_concurrent_tasks=2
+          )
+          manager.register_instance(config)
+
+          # Load tech lead system
+          tech_lead = TechLeadSystem(project_root='.')
+
+          # Auto-assign tasks based on instance capabilities
+          # This is simplified - in production, use intelligent assignment
+          plan = tech_lead.plans.get(plan_id)
+          if plan:
+              # Find tasks without dependencies that aren't assigned
+              available_tasks = [
+                  t for t in plan.tasks
+                  if not t.dependencies and t.assigned_to is None
+              ]
+
+              claimed_tasks = []
+              for task in available_tasks[:2]:  # Claim up to 2 tasks
+                  if tech_lead.assign_task(plan_id, task.task_id, instance_id):
+                      claimed_tasks.append(task.task_id)
+                      tech_lead.start_task(plan_id, task.task_id)
+
+              # Output claimed tasks
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write(f"claimed_tasks={json.dumps(claimed_tasks)}\n")
+
+              if claimed_tasks:
+                  print(f"✓ Instance {instance_id} claimed tasks: {claimed_tasks}")
+              else:
+                  print(f"⚠ Instance {instance_id} found no available tasks")
+          EOF
+
+      - name: Execute claimed tasks
+        if: steps.claim_tasks.outputs.claimed_tasks != '[]'
+        env:
+          CLAIMED_TASKS: ${{ steps.claim_tasks.outputs.claimed_tasks }}
+          INSTANCE_ID: ${{ matrix.instance_id }}
+          PLAN_ID: ${{ needs.plan-tasks.outputs.plan_id }}
+        run: |
+          echo "Instance $INSTANCE_ID executing tasks: $CLAIMED_TASKS"
+
+          # In production, this would trigger actual Claude Code execution
+          # For now, simulate task execution
+          python3 <<'EOF'
+          import json
+          import os
+          import sys
+          import time
+          sys.path.insert(0, 'src')
+
+          from management import TechLeadSystem
+
+          instance_id = int(os.environ['INSTANCE_ID'])
+          plan_id = os.environ['PLAN_ID']
+          claimed_tasks = json.loads(os.environ['CLAIMED_TASKS'])
+
+          tech_lead = TechLeadSystem(project_root='.')
+
+          for task_id in claimed_tasks:
+              print(f"\n🔨 Instance {instance_id} working on task: {task_id}")
+
+              # Simulate work (in production, execute actual task)
+              time.sleep(2)
+
+              # Mark as completed
+              if tech_lead.complete_task(plan_id, task_id):
+                  print(f"✓ Task {task_id} completed")
+              else:
+                  print(f"✗ Failed to complete task {task_id}")
+          EOF
+
+      - name: Upload instance results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: instance-${{ matrix.instance_id }}-results
+          path: |
+            docs/management/
+            docs/shared_knowledge/
+
+  # Job 3: Generate progress report
+  progress-report:
+    name: Generate Progress Report
+    needs: [plan-tasks, execute-tasks]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all instance results
+        uses: actions/download-artifact@v4
+        with:
+          path: instance-results/
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate progress report
+        id: report
+        env:
+          PLAN_ID: ${{ needs.plan-tasks.outputs.plan_id }}
+        run: |
+          python3 <<'EOF'
+          import json
+          import os
+          import sys
+          sys.path.insert(0, 'src')
+
+          from management import TechLeadSystem
+
+          tech_lead = TechLeadSystem(project_root='.')
+
+          # Generate comprehensive progress report
+          report = tech_lead.generate_progress_report()
+
+          # Detect bottlenecks
+          bottlenecks = tech_lead.detect_bottlenecks()
+
+          # Create summary
+          summary = f"""
+          ## 📊 Progress Report
+
+          **Overall Completion**: {report.overall_completion:.1f}%
+
+          **Tasks**:
+          - ✅ Completed: {report.tasks_completed}
+          - 🔄 In Progress: {report.tasks_in_progress}
+          - 🚫 Blocked: {report.tasks_blocked}
+          - 📋 Total: {report.total_tasks}
+
+          **Velocity**: {report.velocity:.1f} tasks/day
+
+          **Estimated Completion**: {report.estimated_completion_date or 'Calculating...'}
+
+          ### 🤖 Instance Performance
+          """
+
+          for instance_id, perf in report.instance_performance.items():
+              summary += f"\n- Instance {instance_id}: {perf['tasks_completed']} completed, "
+              summary += f"{perf['tasks_in_progress']} in progress"
+
+          if report.bottlenecks:
+              summary += "\n\n### 🚨 Bottlenecks\n"
+              for bottleneck in report.bottlenecks:
+                  summary += f"- {bottleneck}\n"
+
+          if report.recommendations:
+              summary += "\n\n### 💡 Recommendations\n"
+              for rec in report.recommendations:
+                  summary += f"- {rec}\n"
+
+          print(summary)
+
+          # Save to file for artifact
+          with open('progress_report.md', 'w') as f:
+              f.write(summary)
+
+          # Output for GitHub
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f"completion={report.overall_completion:.1f}\n")
+              f.write(f"summary<<EOF\n{summary}\nEOF\n")
+          EOF
+
+      - name: Upload progress report
+        uses: actions/upload-artifact@v4
+        with:
+          name: progress-report
+          path: progress_report.md
+
+      - name: Comment progress on issue
+        if: github.event_name == 'issue_comment'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const summary = `${{ steps.report.outputs.summary }}`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
+
+      - name: Update dashboard
+        run: |
+          echo "Dashboard update would be triggered here"
+          echo "In production, this would push metrics to monitoring system"
+
+  # Job 4: Cleanup and merge
+  cleanup:
+    name: Cleanup Worktrees
+    needs: [plan-tasks, execute-tasks, progress-report]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Clean up worktrees
+        run: |
+          echo "Cleaning up temporary worktrees..."
+          # In production, cleanup instance worktrees
+          git worktree list || true
