@@ -1,0 +1,146 @@
+# Agent Configuration for Autonomous Development System
+# Based on Google ADK specification
+
+agents:
+  development:
+    - name: frontend_agent
+      type: LlmAgent
+      description: "Frontend development specialist for UI/UX, React, and TypeScript"
+      model: claude-3-opus
+      max_tokens: 4096
+      specialization:
+        - UI/UX
+        - React
+        - TypeScript
+        - Accessibility
+      worktree_pattern: role-based
+      resource_limits:
+        cpu: "2"
+        memory: "4Gi"
+
+    - name: backend_agent
+      type: LlmAgent
+      description: "Backend development specialist for API, Database, and Performance"
+      model: claude-3-opus
+      max_tokens: 4096
+      specialization:
+        - API
+        - Database
+        - Performance
+        - Scalability
+      worktree_pattern: parallel
+      resource_limits:
+        cpu: "2"
+        memory: "4Gi"
+
+    - name: algorithm_agent
+      type: SequentialAgent
+      description: "Algorithm optimization specialist"
+      specialization:
+        - Optimization
+        - Data Structures
+        - Algorithms
+        - Complexity Analysis
+      worktree_pattern: competition
+      resource_limits:
+        cpu: "2"
+        memory: "4Gi"
+
+  management:
+    - name: approval_agent
+      type: IfElseAgent
+      description: "Code review and approval decision maker"
+      permissions:
+        - approve:pr
+        - merge:code
+        - reject:pr
+      decision_criteria:
+        test_coverage: 90
+        security_scan: passed
+        code_quality: 80
+      decision_threshold: 0.95
+      resource_limits:
+        cpu: "1"
+        memory: "2Gi"
+
+    - name: security_agent
+      type: BaseAgent
+      description: "Security scanning and vulnerability detection"
+      permissions:
+        - scan:vulnerabilities
+        - audit:logs
+        - block:deployment
+      tools:
+        - trivy
+        - sonarqube
+        - owasp_zap
+        - snyk
+      resource_limits:
+        cpu: "2"
+        memory: "4Gi"
+
+    - name: integration_agent
+      type: ForLoopAgent
+      description: "Continuous integration and conflict resolution"
+      permissions:
+        - integrate:code
+        - resolve:conflicts
+        - run:tests
+      strategy: continuous_integration
+      max_iterations: 10
+      resource_limits:
+        cpu: "2"
+        memory: "4Gi"
+
+    - name: devops_agent
+      type: LlmAgent
+      description: "Infrastructure and deployment specialist"
+      model: claude-3-sonnet
+      max_tokens: 4096
+      permissions:
+        - deploy:production
+        - manage:infrastructure
+        - configure:monitoring
+      specialization:
+        - CI/CD
+        - Infrastructure
+        - Monitoring
+        - Performance Tuning
+      resource_limits:
+        cpu: "2"
+        memory: "4Gi"
+
+# Common settings
+common:
+  timeout: 300  # seconds
+  retry_limit: 3
+  log_level: INFO
+
+# Deployment configuration
+deployment:
+  platform: vertex-ai
+  project_id: ${GCP_PROJECT_ID}
+  region: us-central1
+  scaling:
+    min_instances: 1
+    max_instances: 10
+    target_cpu_utilization: 70
+
+# Monitoring and observability
+monitoring:
+  enabled: true
+  metrics:
+    - agent_execution_time
+    - agent_success_rate
+    - agent_error_rate
+    - resource_utilization
+  alerts:
+    - type: error_rate
+      threshold: 5  # percent
+      notification: email
+    - type: response_time
+      threshold: 30  # seconds
+      notification: slack
+
+# Security profile
+security_profile: enterprise
