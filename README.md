@@ -488,8 +488,21 @@ gcloud run deploy autonomous-dev \
 │   └── lambda/                # AWS Lambda
 ├── dashboard/                 # GitHub Pages dashboard (Phase 6)
 │   └── index.html             # Default free dashboard
+├── frontend/                  # Real-time UI (Phase 7)
+│   ├── src/
+│   │   ├── components/        # React components
+│   │   ├── hooks/             # Custom React hooks
+│   │   ├── types/             # TypeScript types
+│   │   └── pages/             # Page components
+│   ├── package.json
+│   └── vite.config.ts
+├── backend/                   # FastAPI backend (Phase 7)
+│   ├── api/
+│   │   └── gateway.py         # WebSocket & REST API
+│   └── requirements.txt
 ├── docs/                      # Documentation
 │   ├── P2P_ARCHITECTURE.md    # P2P architecture guide (Phase 6)
+│   ├── PHASE7_REALTIME_UI.md  # Real-time UI guide (Phase 7)
 │   ├── COMPLIANCE_GOVERNANCE.md
 │   └── COST_OPTIMIZATION.md
 └── .github/workflows/         # CI/CD pipelines
