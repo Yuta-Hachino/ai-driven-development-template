@@ -18,6 +18,8 @@ The Autonomous Development Repository System is a cutting-edge platform that com
 ### Key Features
 
 - ✅ **Fully Autonomous Development** - AI agents handle development, testing, and deployment
+- ✅ **P2P Coordination** - Decentralized architecture using GitHub as communication layer (Phase 6)
+- ✅ **Free Default Setup** - $0/month with GitHub Pages dashboard and GitHub Actions
 - ✅ **Multi-Instance Coordination** - Multiple Claude Code instances working in parallel
 - ✅ **Multi-Pattern Worktrees** - Competition, Parallel, A/B Testing, Role-based, Branch Tree
 - ✅ **Enterprise Security** - gVisor sandboxing, encryption, MFA, RBAC, audit logging
@@ -26,7 +28,7 @@ The Autonomous Development Repository System is a cutting-edge platform that com
 - ✅ **Project Memory** - Shared knowledge base and context preservation
 - ✅ **Tech Lead Management** - Intelligent task planning and assignment
 - ✅ **Auto-Documentation** - Keep documentation in sync with code
-- ✅ **Cloud-Native** - Designed for GCP with Kubernetes support
+- ✅ **Flexible Deployment** - GitHub Pages, Cloud Run, VPS, Lambda, or Kubernetes
 - ✅ **Comprehensive Testing** - 90%+ test coverage with security scanning
 
 ## Quick Start
@@ -388,20 +390,63 @@ pytest --cov=src --cov-report=html
 
 ## Deployment
 
-### Local Docker
+The system supports two deployment architectures:
+
+### **Option 1: P2P Architecture (Phase 6) - Recommended ✨**
+
+Fully decentralized coordination using GitHub as the communication layer. No central server required!
+
+**Features:**
+- ✅ **$0/month** - Free GitHub Pages dashboard (default)
+- ✅ **Fully Decentralized** - GitHub handles all coordination
+- ✅ **Scalable** - 1-5 parallel instances via GitHub Actions
+- ✅ **Simple** - No Kubernetes or server management
+- ✅ **Optional Upgrades** - Deploy dynamic dashboard to Cloud Run, VPS, or Lambda
+
+**Quick Start:**
+```bash
+# 1. Set up GitHub Actions secrets
+# GITHUB_TOKEN with repo access
+
+# 2. Create issue with 'autonomous-dev' label
+# 3. Instances auto-coordinate via P2P
+
+# 4. Deploy dashboard (choose one):
+python scripts/deploy_dashboard.py
+# Options:
+# 1. GitHub Pages (FREE, default)
+# 2. Google Cloud Run ($0-10/month)
+# 3. VPS/Sakura ($4-25/month)
+# 4. AWS Lambda ($0-5/month)
+```
+
+**See detailed documentation:** [docs/P2P_ARCHITECTURE.md](docs/P2P_ARCHITECTURE.md)
+
+---
+
+### **Option 2: Centralized Kubernetes (Phase 5)**
+
+Traditional centralized architecture with Kubernetes orchestration.
+
+**When to use:**
+- Enterprise deployments requiring centralized control
+- Need for >5 parallel instances
+- Existing Kubernetes infrastructure
+
+#### Local Docker
 
 ```bash
 docker build -f docker/Dockerfile -t autonomous-dev:latest .
 docker run autonomous-dev:latest
 ```
 
-### Kubernetes (GKE)
+#### Kubernetes (GKE)
 
 ```bash
-kubectl apply -f k8s/
+kubectl apply -f k8s/production/
 ```
 
-### Cloud Run
+#### Cloud Run
 
 ```bash
 gcloud run deploy autonomous-dev \
@@ -428,14 +473,29 @@ gcloud run deploy autonomous-dev \
 │   ├── memory/                 # Project memory (Phase 2.5)
 │   ├── management/             # Tech lead system (Phase 2.5)
 │   ├── monitoring/             # Notifications (Phase 2.5)
-│   └── documentation/          # Auto-docs (Phase 2.5)
+│   ├── documentation/          # Auto-docs (Phase 2.5)
+│   └── p2p/                    # P2P coordination (Phase 6)
 ├── tests/                     # Test suite
 ├── examples/                  # Usage examples
 ├── scripts/                   # Utility scripts
+│   └── deploy_dashboard.py     # Dashboard deployment selector (Phase 6)
 ├── docker/                    # Docker configuration
-├── k8s/                       # Kubernetes manifests
-├── dashboard/                 # Progress monitoring
+├── k8s/                       # Kubernetes manifests (Phase 5)
+│   └── production/             # Production configs
+├── deployments/               # Optional deployments (Phase 6)
+│   ├── cloudrun/              # Google Cloud Run
+│   ├── vps/                   # VPS deployment
+│   └── lambda/                # AWS Lambda
+├── dashboard/                 # GitHub Pages dashboard (Phase 6)
+│   └── index.html             # Default free dashboard
+├── docs/                      # Documentation
+│   ├── P2P_ARCHITECTURE.md    # P2P architecture guide (Phase 6)
+│   ├── COMPLIANCE_GOVERNANCE.md
+│   └── COST_OPTIMIZATION.md
 └── .github/workflows/         # CI/CD pipelines
+    ├── ci.yml
+    ├── security.yml
+    └── p2p-autonomous-dev.yml  # P2P coordination workflow (Phase 6)
 ```
 
 ## Contributing

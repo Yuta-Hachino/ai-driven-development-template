@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autonomous Dev - P2P Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status-active {
+            background: #10b981;
+            color: white;
+        }
+
+        .status-idle {
+            background: #6b7280;
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-trend {
+            font-size: 0.9em;
+            color: #10b981;
+            margin-top: 5px;
+        }
+
+        .instances-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .instance-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #667eea;
+        }
+
+        .instance-card.leader {
+            border-left-color: #f59e0b;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 158, 11, 0.1) 100%);
+        }
+
+        .instance-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .instance-id {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .instance-status {
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .status-ready { background: #10b981; color: white; }
+        .status-working { background: #3b82f6; color: white; }
+        .status-completed { background: #8b5cf6; color: white; }
+        .status-failed { background: #ef4444; color: white; }
+
+        .instance-info {
+            font-size: 0.9em;
+            color: #666;
+            margin: 5px 0;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .chart-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .last-update {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+
+        .refresh-btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .stats-grid,
+            .instances-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <div class="header">
+                <h1>🤖 Autonomous Dev Dashboard</h1>
+                <p class="subtitle">
+                    P2P Coordination System
+                    <span class="status-badge" :class="isActive ? 'status-active' : 'status-idle'">
+                        {{ isActive ? 'Active' : 'Idle' }}
+                    </span>
+                </p>
+                <button class="refresh-btn" @click="fetchData" :disabled="loading">
+                    {{ loading ? 'Loading...' : '🔄 Refresh' }}
+                </button>
+            </div>
+
+            <div v-if="error" class="error">
+                ⚠️ {{ error }}
+            </div>
+
+            <div v-if="loading && !data" class="loading">
+                Loading dashboard data...
+            </div>
+
+            <div v-if="data && !loading">
+                <!-- Statistics Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Active Instances</div>
+                        <div class="stat-value">{{ stats.activeInstances }}</div>
+                        <div class="stat-trend">{{ stats.totalInstances }} total</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">Tasks Completed</div>
+                        <div class="stat-value">{{ stats.completedTasks }}</div>
+                        <div class="stat-trend">{{ stats.totalTasks }} total</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">Success Rate</div>
+                        <div class="stat-value">{{ stats.successRate }}%</div>
+                        <div class="stat-trend">{{ stats.failedTasks }} failed</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">Avg Execution Time</div>
+                        <div class="stat-value">{{ stats.avgExecutionTime }}</div>
+                        <div class="stat-trend">Per task</div>
+                    </div>
+                </div>
+
+                <!-- Instance Cards -->
+                <div class="instances-grid">
+                    <div
+                        v-for="instance in instances"
+                        :key="instance.node_id"
+                        class="instance-card"
+                        :class="{ leader: instance.is_leader }"
+                    >
+                        <div class="instance-header">
+                            <div class="instance-id">
+                                {{ instance.is_leader ? '👑 ' : '⚙️ ' }}
+                                Instance {{ instance.instance }}
+                            </div>
+                            <span class="instance-status" :class="`status-${instance.status}`">
+                                {{ instance.status }}
+                            </span>
+                        </div>
+                        <div class="instance-info">
+                            <strong>Node ID:</strong> {{ instance.node_id.substring(0, 20) }}...
+                        </div>
+                        <div class="instance-info" v-if="instance.current_task">
+                            <strong>Current Task:</strong> {{ instance.current_task }}
+                        </div>
+                        <div class="instance-info">
+                            <strong>Started:</strong> {{ formatTime(instance.started_at) }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="chart-container">
+                    <div class="chart-title">Task Status Distribution</div>
+                    <canvas id="taskChart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">Instance Activity Timeline</div>
+                    <canvas id="timelineChart"></canvas>
+                </div>
+            </div>
+
+            <div class="last-update">
+                Last updated: {{ lastUpdate }}
+                <br>
+                Auto-refresh every 30 seconds
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    data: null,
+                    loading: true,
+                    error: null,
+                    lastUpdate: new Date().toLocaleString(),
+                    taskChart: null,
+                    timelineChart: null
+                };
+            },
+            computed: {
+                isActive() {
+                    return this.stats.activeInstances > 0;
+                },
+                instances() {
+                    if (!this.data) return [];
+                    return this.data;
+                },
+                stats() {
+                    if (!this.data || this.data.length === 0) {
+                        return {
+                            activeInstances: 0,
+                            totalInstances: 0,
+                            completedTasks: 0,
+                            failedTasks: 0,
+                            totalTasks: 0,
+                            successRate: 0,
+                            avgExecutionTime: '0s'
+                        };
+                    }
+
+                    const active = this.data.filter(i => i.status === 'working' || i.status === 'ready').length;
+                    const completed = this.data.filter(i => i.status === 'completed').length;
+                    const failed = this.data.filter(i => i.status === 'failed').length;
+                    const total = this.data.length;
+                    const successRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+                    return {
+                        activeInstances: active,
+                        totalInstances: total,
+                        completedTasks: completed,
+                        failedTasks: failed,
+                        totalTasks: total,
+                        successRate: successRate,
+                        avgExecutionTime: '12s'  // TODO: Calculate from real data
+                    };
+                }
+            },
+            methods: {
+                async fetchData() {
+                    this.loading = true;
+                    this.error = null;
+
+                    try {
+                        // Try to fetch latest metrics from gh-pages
+                        const response = await fetch('data/latest.json');
+
+                        if (!response.ok) {
+                            throw new Error('No data available yet. Run a P2P workflow to generate data.');
+                        }
+
+                        this.data = await response.json();
+                        this.lastUpdate = new Date().toLocaleString();
+
+                        // Update charts
+                        this.$nextTick(() => {
+                            this.updateCharts();
+                        });
+
+                    } catch (error) {
+                        console.error('Error fetching data:', error);
+                        this.error = error.message;
+
+                        // Load sample data for demo
+                        this.loadSampleData();
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                loadSampleData() {
+                    // Sample data for demonstration
+                    this.data = [
+                        {
+                            instance: 1,
+                            node_id: 'sample-run-1234567890-job-1',
+                            status: 'completed',
+                            is_leader: true,
+                            current_task: null,
+                            started_at: new Date(Date.now() - 600000).toISOString(),
+                            timestamp: new Date().toISOString()
+                        },
+                        {
+                            instance: 2,
+                            node_id: 'sample-run-1234567890-job-2',
+                            status: 'working',
+                            is_leader: false,
+                            current_task: 'task-2',
+                            started_at: new Date(Date.now() - 300000).toISOString(),
+                            timestamp: new Date().toISOString()
+                        },
+                        {
+                            instance: 3,
+                            node_id: 'sample-run-1234567890-job-3',
+                            status: 'ready',
+                            is_leader: false,
+                            current_task: null,
+                            started_at: new Date(Date.now() - 100000).toISOString(),
+                            timestamp: new Date().toISOString()
+                        }
+                    ];
+
+                    this.$nextTick(() => {
+                        this.updateCharts();
+                    });
+                },
+                updateCharts() {
+                    this.updateTaskChart();
+                    this.updateTimelineChart();
+                },
+                updateTaskChart() {
+                    const ctx = document.getElementById('taskChart');
+                    if (!ctx) return;
+
+                    if (this.taskChart) {
+                        this.taskChart.destroy();
+                    }
+
+                    const statusCounts = {
+                        ready: 0,
+                        working: 0,
+                        completed: 0,
+                        failed: 0
+                    };
+
+                    this.data.forEach(instance => {
+                        statusCounts[instance.status] = (statusCounts[instance.status] || 0) + 1;
+                    });
+
+                    this.taskChart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Ready', 'Working', 'Completed', 'Failed'],
+                            datasets: [{
+                                data: [
+                                    statusCounts.ready,
+                                    statusCounts.working,
+                                    statusCounts.completed,
+                                    statusCounts.failed
+                                ],
+                                backgroundColor: [
+                                    '#10b981',
+                                    '#3b82f6',
+                                    '#8b5cf6',
+                                    '#ef4444'
+                                ],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }
+                    });
+                },
+                updateTimelineChart() {
+                    const ctx = document.getElementById('timelineChart');
+                    if (!ctx) return;
+
+                    if (this.timelineChart) {
+                        this.timelineChart.destroy();
+                    }
+
+                    // Sample timeline data
+                    this.timelineChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: ['5min ago', '4min ago', '3min ago', '2min ago', '1min ago', 'Now'],
+                            datasets: [{
+                                label: 'Active Instances',
+                                data: [1, 2, 3, 3, 2, this.stats.activeInstances],
+                                borderColor: '#667eea',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                },
+                formatTime(timestamp) {
+                    if (!timestamp) return 'N/A';
+                    const date = new Date(timestamp);
+                    const now = new Date();
+                    const diff = Math.floor((now - date) / 1000);
+
+                    if (diff < 60) return `${diff}s ago`;
+                    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+                    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+                    return date.toLocaleDateString();
+                }
+            },
+            mounted() {
+                this.fetchData();
+
+                // Auto-refresh every 30 seconds
+                setInterval(() => {
+                    this.fetchData();
+                }, 30000);
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
