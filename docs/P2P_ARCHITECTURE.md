@@ -180,142 +180,37 @@ async def elect_leader(self) -> bool:
 
 ---
 
-## Dashboard Options
+## Dashboard
 
-### Option 1: GitHub Pages (Default) ⭐
+The P2P system uses the **Enhanced P2P Dashboard** - a 100% serverless, single-file dashboard that runs entirely in your browser.
 
-**Cost:** $0 (Free)
-**Deployment:** Automatic via workflow
+**Key Features:**
+- ✅ **$0/month** - Completely free, no server required
+- ✅ **Real-time** - 5-second polling via GitHub API (Octokit)
+- ✅ **Rich Visualizations** - Chart.js charts (Grafana-equivalent)
+- ✅ **Interactive** - 3 tabs (Overview, Workflows, P2P Messages)
+- ✅ **Secure** - GitHub token stored locally in browser only
+- ✅ **Mobile Responsive** - Works on all devices
 
-**Features:**
-- Static HTML dashboard
-- Real-time updates via GitHub API
-- Auto-refresh every 30 seconds
-- Charts and visualizations
-
-**Access:**
-```
-https://<username>.github.io/<repo>/
-```
-
-**Setup:**
+**Quick Start:**
 ```bash
-# Enable GitHub Pages
-# Settings > Pages > Source: gh-pages branch
+# Option 1: Open locally (no server needed)
+open dashboard/index.html
 
-# Dashboard auto-updates via workflow
+# Option 2: Deploy to GitHub Pages (free hosting)
+# Settings → Pages → Source: main → /dashboard
+# Your dashboard: https://<username>.github.io/<repo>/
 ```
+
+**Configuration:**
+1. Create GitHub token: https://github.com/settings/tokens (scope: `repo`, `workflow`)
+2. Open dashboard in browser
+3. Enter token and repository (`owner/repo`)
+4. Click "Connect"
+
+**See complete documentation:** [DASHBOARD_GUIDE.md](DASHBOARD_GUIDE.md)
 
 ---
-
-### Option 2: Cloud Run
-
-**Cost:** $0-10/month
-**Deployment:** ~5 minutes
-
-**Features:**
-- Dynamic dashboard with server-side logic
-- GitHub API integration
-- Prometheus metrics endpoint
-- Custom alerts
-
-**Deploy:**
-
-```bash
-# 1. Build image
-cd deployments/cloudrun
-docker build -t gcr.io/YOUR_PROJECT/p2p-dashboard .
-
-# 2. Push to registry
-docker push gcr.io/YOUR_PROJECT/p2p-dashboard
-
-# 3. Deploy to Cloud Run
-gcloud run deploy p2p-dashboard \
-  --image gcr.io/YOUR_PROJECT/p2p-dashboard \
-  --platform managed \
-  --region asia-northeast1 \
-  --allow-unauthenticated \
-  --set-env-vars GITHUB_TOKEN=$GITHUB_TOKEN,GITHUB_REPO=user/repo
-```
-
-**Access:**
-```
-https://p2p-dashboard-xxx.run.app
-```
-
----
-
-### Option 3: VPS (Sakura, DigitalOcean, etc.)
-
-**Cost:** ¥590-3,520/month ($4-25/month)
-**Deployment:** ~10 minutes
-
-**Features:**
-- Full control
-- Can add Grafana + Prometheus
-- SSH access
-
-**Deploy:**
-
-```bash
-# 1. SSH to VPS
-ssh root@your-vps-ip
-
-# 2. Install Docker
-curl -fsSL https://get.docker.com | sh
-
-# 3. Run container
-docker run -d \
-  -p 80:8080 \
-  -e GITHUB_TOKEN=your_token \
-  -e GITHUB_REPO=user/repo \
-  --restart always \
-  ghcr.io/autonomous-dev/p2p-dashboard:latest
-```
-
-**Access:**
-```
-http://your-vps-ip
-```
-
----
-
-### Option 4: AWS Lambda + API Gateway
-
-**Cost:** $0-5/month
-**Deployment:** ~10 minutes
-
-**Features:**
-- Serverless
-- Auto-scaling
-- Pay per request
-
-**Deploy:**
-
-```bash
-# Using Serverless Framework
-cd deployments/lambda
-npm install -g serverless
-serverless deploy
-```
-
-**Access:**
-```
-https://xxx.execute-api.region.amazonaws.com/prod
-```
-
----
-
-## Comparison Table
-
-| Option | Cost/month | Setup Time | Maintenance | Scalability | Recommend |
-|--------|-----------|------------|-------------|-------------|-----------|
-| **GitHub Pages** | $0 | 0 min | None | N/A | ⭐⭐⭐⭐⭐ |
-| **Cloud Run** | $0-10 | 5 min | Minimal | Auto | ⭐⭐⭐⭐⭐ |
-| **VPS** | $4-25 | 10 min | Manual | Manual | ⭐⭐⭐ |
-| **Lambda** | $0-5 | 10 min | Minimal | Auto | ⭐⭐⭐⭐ |
-| **Kubernetes** | $200-500 | 40 min | High | Auto | ⭐ (overkill) |
-
 ---
 
 ## Usage Guide

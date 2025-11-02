@@ -488,16 +488,18 @@ kubectl apply -f k8s/production/
 │   ├── documentation/          # Auto-docs (Phase 2.5)
 │   └── p2p/                    # P2P coordination (Phase 6)
 ├── tests/                     # Test suite
+│   ├── e2e/                   # End-to-end tests
+│   └── performance/           # Performance benchmarks
 ├── examples/                  # Usage examples
 ├── scripts/                   # Utility scripts
-│   └── deploy_dashboard.py     # Dashboard deployment selector (Phase 6)
+│   ├── init-project.sh        # Project initialization
+│   ├── security_scan.sh       # Security scanning
+│   └── deploy_production.sh   # Production deployment
 ├── docker/                    # Docker configuration
 ├── k8s/                       # Kubernetes manifests (Phase 5)
-│   └── production/             # Production configs
-├── deployments/               # Optional deployments (Phase 6)
-│   ├── cloudrun/              # Google Cloud Run
-│   ├── vps/                   # VPS deployment
-│   └── lambda/                # AWS Lambda
+│   └── production/            # Production configs (Prometheus/Grafana removed)
+├── security/                  # Security configurations
+│   └── scan_config.yaml       # Security scan settings
 ├── dashboard/                 # Enhanced P2P Dashboard (100% serverless)
 │   └── index.html             # Single-file Vue.js app with Octokit
 ├── docs/                      # Documentation
