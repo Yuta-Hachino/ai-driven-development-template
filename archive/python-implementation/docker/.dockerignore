@@ -1,0 +1,58 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+.eggs
+.pytest_cache
+.mypy_cache
+.coverage
+htmlcov
+
+# Virtual environments
+venv
+env
+ENV
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Secrets
+.secrets
+*.key
+*.pem
+*.env
+
+# Logs
+logs
+*.log
+
+# Documentation
+*.md
+docs
+
+# Tests
+tests
+*.test.py
+
+# Worktrees
+../worktrees
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,90 @@
+project_name: autonomous-dev
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - id: autonomous-dev
+    binary: autonomous-dev
+    main: ./cmd/autonomous-dev
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/autonomous-dev/cli/pkg/version.Version={{.Version}}
+      - -X github.com/autonomous-dev/cli/pkg/version.GitCommit={{.Commit}}
+      - -X github.com/autonomous-dev/cli/pkg/version.BuildDate={{.Date}}
+
+archives:
+  - id: default
+    format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - LICENSE*
+      - README*
+      - CHANGELOG*
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - '^ci:'
+
+brews:
+  - name: autonomous-dev
+    repository:
+      owner: autonomous-dev
+      name: homebrew-tap
+    folder: Formula
+    homepage: https://github.com/autonomous-dev/cli
+    description: Multi-instance Claude Code orchestrator for parallel development
+    license: MIT
+    test: |
+      system "#{bin}/autonomous-dev --version"
+    install: |
+      bin.install "autonomous-dev"
+
+nfpms:
+  - id: default
+    package_name: autonomous-dev
+    vendor: Autonomous Dev
+    homepage: https://github.com/autonomous-dev/cli
+    maintainer: Autonomous Dev Team
+    description: Multi-instance Claude Code orchestrator for parallel development
+    license: MIT
+    formats:
+      - deb
+      - rpm
+      - apk
+    dependencies: []
+    recommends: []
+
+release:
+  github:
+    owner: autonomous-dev
+    name: cli
+  draft: false
+  prerelease: auto
+  name_template: "{{.Version}}"

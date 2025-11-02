@@ -1,0 +1,333 @@
+name: P2P Autonomous Development
+
+on:
+  issues:
+    types: [opened, labeled]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number for coordination'
+        required: true
+        type: number
+      max_instances:
+        description: 'Maximum number of parallel instances'
+        required: false
+        default: '5'
+        type: string
+
+# Allow only one P2P workflow per issue
+concurrency:
+  group: p2p-${{ github.event.issue.number || inputs.issue_number }}
+  cancel-in-progress: false
+
+jobs:
+  # Job 1: Check if we should start P2P coordination
+  check-trigger:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'p2p-dev')) ||
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '/p2p-dev')) ||
+      (github.event_name == 'workflow_dispatch')
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+      issue_number: ${{ steps.check.outputs.issue_number }}
+    steps:
+      - name: Check if should run
+        id: check
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "issue_number=${{ inputs.issue_number }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "issues" ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "issue_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "issue_comment" ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "issue_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Add reaction to comment
+        if: github.event_name == 'issue_comment'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: 'rocket'
+            });
+
+  # Job 2: Execute P2P coordination (multiple instances in parallel)
+  p2p-execute:
+    needs: check-trigger
+    if: needs.check-trigger.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        instance: [1, 2, 3, 4, 5]
+      max-parallel: 5
+      fail-fast: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install PyGithub asyncio
+
+      - name: Wait for staggered start
+        run: |
+          # Stagger instance starts to reduce race conditions
+          DELAY=$(((${{ matrix.instance }} - 1) * 2))
+          echo "Waiting ${DELAY} seconds before starting..."
+          sleep $DELAY
+
+      - name: Initialize P2P Node
+        id: init
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ needs.check-trigger.outputs.issue_number }}
+          RUN_ID: ${{ github.run_id }}
+          JOB_ID: ${{ github.job }}-${{ matrix.instance }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 << 'EOF'
+          import asyncio
+          import os
+          import sys
+
+          sys.path.insert(0, 'src')
+          from p2p.coordinator import P2PCoordinator
+
+          async def main():
+              coordinator = P2PCoordinator(
+                  github_token=os.environ['GITHUB_TOKEN'],
+                  repo=os.environ['REPOSITORY'],
+                  issue_number=int(os.environ['ISSUE_NUMBER']),
+                  run_id=os.environ['RUN_ID'],
+                  job_id=os.environ['JOB_ID']
+              )
+
+              # Step 1: Elect leader
+              is_leader = await coordinator.elect_leader()
+
+              # Output for next steps
+              print(f"::set-output name=is_leader::{str(is_leader).lower()}")
+              print(f"Node {coordinator.node_id}: {'LEADER' if is_leader else 'WORKER'}")
+
+              return is_leader
+
+          if __name__ == '__main__':
+              is_leader = asyncio.run(main())
+              sys.exit(0 if is_leader is not None else 1)
+          EOF
+
+      - name: Run as Leader
+        if: steps.init.outputs.is_leader == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ needs.check-trigger.outputs.issue_number }}
+          RUN_ID: ${{ github.run_id }}
+          JOB_ID: ${{ github.job }}-${{ matrix.instance }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 << 'EOF'
+          import asyncio
+          import os
+          import sys
+
+          sys.path.insert(0, 'src')
+          from p2p.coordinator import P2PCoordinator, P2PTask, run_as_leader
+
+          async def main():
+              coordinator = P2PCoordinator(
+                  github_token=os.environ['GITHUB_TOKEN'],
+                  repo=os.environ['REPOSITORY'],
+                  issue_number=int(os.environ['ISSUE_NUMBER']),
+                  run_id=os.environ['RUN_ID'],
+                  job_id=os.environ['JOB_ID']
+              )
+
+              coordinator.is_leader = True
+
+              # TODO: Parse issue body to create task plan
+              # For now, create sample tasks
+              tasks = [
+                  P2PTask(
+                      task_id="task-1",
+                      title="Implement backend API",
+                      description="Create REST API endpoints",
+                      priority="high",
+                      estimated_hours=8.0,
+                      required_skills=["backend", "python"],
+                      dependencies=[],
+                      status="available"
+                  ),
+                  P2PTask(
+                      task_id="task-2",
+                      title="Create frontend UI",
+                      description="Build React components",
+                      priority="medium",
+                      estimated_hours=6.0,
+                      required_skills=["frontend", "react"],
+                      dependencies=["task-1"],
+                      status="available"
+                  ),
+                  P2PTask(
+                      task_id="task-3",
+                      title="Write tests",
+                      description="Unit and integration tests",
+                      priority="medium",
+                      estimated_hours=4.0,
+                      required_skills=["testing"],
+                      dependencies=["task-1", "task-2"],
+                      status="available"
+                  ),
+              ]
+
+              await run_as_leader(coordinator, tasks)
+
+          if __name__ == '__main__':
+              asyncio.run(main())
+          EOF
+
+      - name: Run as Worker
+        if: steps.init.outputs.is_leader != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ needs.check-trigger.outputs.issue_number }}
+          RUN_ID: ${{ github.run_id }}
+          JOB_ID: ${{ github.job }}-${{ matrix.instance }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 << 'EOF'
+          import asyncio
+          import os
+          import sys
+
+          sys.path.insert(0, 'src')
+          from p2p.coordinator import P2PCoordinator, run_as_worker
+
+          async def main():
+              coordinator = P2PCoordinator(
+                  github_token=os.environ['GITHUB_TOKEN'],
+                  repo=os.environ['REPOSITORY'],
+                  issue_number=int(os.environ['ISSUE_NUMBER']),
+                  run_id=os.environ['RUN_ID'],
+                  job_id=os.environ['JOB_ID']
+              )
+
+              await run_as_worker(coordinator)
+
+          if __name__ == '__main__':
+              asyncio.run(main())
+          EOF
+
+      - name: Update dashboard data
+        if: always()
+        run: |
+          # Export metrics for GitHub Pages dashboard
+          mkdir -p dashboard/data
+          cat > dashboard/data/metrics-${{ matrix.instance }}.json << EOF
+          {
+            "instance": ${{ matrix.instance }},
+            "node_id": "${{ github.run_id }}-${{ github.job }}-${{ matrix.instance }}",
+            "status": "${{ job.status }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+
+      - name: Upload metrics artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: metrics-instance-${{ matrix.instance }}
+          path: dashboard/data/
+          retention-days: 7
+
+  # Job 3: Aggregate results and update dashboard
+  aggregate-results:
+    needs: [check-trigger, p2p-execute]
+    if: always() && needs.check-trigger.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Download all metrics
+        uses: actions/download-artifact@v4
+        with:
+          path: metrics
+
+      - name: Aggregate metrics
+        run: |
+          # Combine all metrics into one file
+          echo '[' > combined-metrics.json
+          first=true
+          for file in metrics/*/metrics-*.json; do
+            if [ -f "$file" ]; then
+              if [ "$first" = false ]; then
+                echo ',' >> combined-metrics.json
+              fi
+              cat "$file" >> combined-metrics.json
+              first=false
+            fi
+          done
+          echo ']' >> combined-metrics.json
+
+          # Move to gh-pages
+          mkdir -p gh-pages/data
+          cp combined-metrics.json gh-pages/data/latest.json
+          cp combined-metrics.json gh-pages/data/run-${{ github.run_id }}.json
+
+      - name: Commit and push to gh-pages
+        run: |
+          cd gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git commit -m "Update metrics for run ${{ github.run_id }}" || echo "No changes"
+          git push origin gh-pages
+
+      - name: Post summary to issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const metrics = JSON.parse(fs.readFileSync('combined-metrics.json', 'utf8'));
+
+            const summary = `## 📊 P2P Execution Summary
+
+            **Run ID:** ${{ github.run_id }}
+            **Instances:** ${metrics.length}
+            **Completed:** ${metrics.filter(m => m.status === 'success').length}
+            **Failed:** ${metrics.filter(m => m.status === 'failure').length}
+
+            [View Dashboard](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }})
+            `;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ needs.check-trigger.outputs.issue_number }},
+              body: summary
+            });

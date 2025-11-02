@@ -1,0 +1,288 @@
+# Git Worktree Development Patterns Configuration
+
+# General worktree settings
+worktree:
+  max_parallel: 10
+  cleanup_after_days: 7
+  base_path: ../worktrees
+  auto_cleanup: true
+
+# Enabled patterns
+patterns:
+  enabled:
+    - competition
+    - parallel
+    - ab-test
+    - role-based
+    - branch-tree
+
+  # Pattern-specific configurations
+  competition:
+    description: "Multiple agents solve the same problem, best solution wins"
+    max_competitors: 5
+    evaluation_criteria:
+      performance: 0.30
+      code_quality: 0.25
+      test_coverage: 0.25
+      maintainability: 0.20
+    timeout: 7200  # seconds (2 hours)
+
+  parallel:
+    description: "Different features developed simultaneously"
+    max_parallel_features: 8
+    sync_interval: 1800  # seconds (30 minutes)
+    conflict_resolution: automated
+    integration_testing: required
+
+  ab-test:
+    description: "Two variants developed and tested"
+    max_variants: 3
+    test_duration: 3600  # seconds (1 hour)
+    metrics:
+      - user_satisfaction
+      - response_time
+      - error_rate
+      - resource_usage
+    confidence_level: 0.95
+
+  role-based:
+    description: "Agents work on specialized areas"
+    roles:
+      - backend
+      - frontend
+      - security
+      - devops
+      - testing
+    coordination_interval: 3600  # seconds (1 hour)
+    api_contract_enforcement: strict
+
+  branch-tree:
+    description: "Exploratory development with branching"
+    max_depth: 3
+    max_branches_per_level: 4
+    pruning_threshold: 0.6
+    exploration_strategy: breadth_first
+
+# Naming convention
+naming:
+  format: "{pattern}-{agent}-{feature}-{timestamp}"
+  timestamp_format: "%Y%m%d-%H%M%S"
+  max_length: 100
+  allowed_chars: "a-z0-9-_"
+
+# Synchronization settings
+sync:
+  auto_sync: true
+  sync_interval: 1800  # seconds (30 minutes)
+  fetch_before_sync: true
+  rebase_strategy: merge
+  conflict_handling:
+    auto_resolve: true
+    manual_review_required_for:
+      - semantic_conflicts
+      - critical_files
+
+# Evaluation system
+evaluation:
+  enabled: true
+  auto_evaluate: true
+
+  metrics:
+    performance:
+      weight: 0.30
+      benchmarks:
+        - execution_time
+        - memory_usage
+        - throughput
+        - latency
+
+    code_quality:
+      weight: 0.25
+      tools:
+        - sonarqube
+        - pylint
+        - mypy
+      min_score: 80
+
+    security:
+      weight: 0.25
+      scanners:
+        - trivy
+        - snyk
+        - bandit
+      max_vulnerabilities:
+        critical: 0
+        high: 0
+        medium: 2
+
+    maintainability:
+      weight: 0.20
+      metrics:
+        - complexity
+        - duplication
+        - documentation_coverage
+
+  test_coverage:
+    required: true
+    min_coverage: 90
+    exclude_patterns:
+      - "*/tests/*"
+      - "*/test_*.py"
+      - "*/__pycache__/*"
+
+# Integration settings
+integration:
+  strategy: continuous
+  pre_merge_checks:
+    - run_unit_tests
+    - run_integration_tests
+    - security_scan
+    - code_quality_check
+    - build_verification
+
+  approval_required: true
+  min_approvals: 1
+  auto_merge: false
+
+  merge_strategy: squash
+  delete_branch_after_merge: true
+
+# Resource management
+resources:
+  per_worktree:
+    max_disk_usage: 10  # GB
+    max_build_time: 1800  # seconds (30 minutes)
+    max_test_time: 900  # seconds (15 minutes)
+
+  total:
+    max_disk_usage: 100  # GB
+    max_concurrent_builds: 5
+    max_concurrent_tests: 10
+
+  cleanup:
+    auto_cleanup_on_low_space: true
+    min_free_space: 20  # GB
+    cleanup_order:
+      - oldest_first
+      - lowest_score_first
+
+# Monitoring and logging
+monitoring:
+  enabled: true
+  collect_metrics: true
+
+  metrics:
+    - worktree_count
+    - active_patterns
+    - evaluation_scores
+    - merge_success_rate
+    - conflict_rate
+    - build_success_rate
+
+  logging:
+    level: INFO
+    format: json
+    rotation: daily
+    retention_days: 30
+
+# CI/CD integration
+ci_cd:
+  enabled: true
+  platform: github-actions
+
+  triggers:
+    on_worktree_create: true
+    on_code_change: true
+    on_evaluation: true
+
+  workflows:
+    - name: worktree-development
+      file: .github/workflows/worktree-ci.yaml
+    - name: evaluation-pipeline
+      file: .github/workflows/evaluation.yaml
+    - name: integration-pipeline
+      file: .github/workflows/integration.yaml
+
+# Pattern-specific agents assignment
+agent_assignment:
+  competition:
+    agents:
+      - algorithm_agent
+      - backend_agent
+      - frontend_agent
+
+  parallel:
+    agents:
+      - frontend_agent
+      - backend_agent
+      - security_agent
+      - devops_agent
+
+  ab-test:
+    agents:
+      - frontend_agent
+      - backend_agent
+
+  role-based:
+    assignments:
+      backend: backend_agent
+      frontend: frontend_agent
+      security: security_agent
+      devops: devops_agent
+
+  branch-tree:
+    agents:
+      - algorithm_agent
+      - integration_agent
+
+# Conflict resolution strategies
+conflict_resolution:
+  strategies:
+    semantic:
+      method: ml_based
+      fallback: manual_review
+
+    structural:
+      method: rule_based
+      rules:
+        - prefer_newer_timestamp
+        - prefer_higher_test_coverage
+        - prefer_better_performance
+
+    textual:
+      method: git_merge
+      strategy: recursive
+      options:
+        - patience
+        - diff-algorithm=histogram
+
+  escalation:
+    enabled: true
+    escalate_after_attempts: 3
+    notify:
+      - integration_agent
+      - approval_agent
+
+# Best practices enforcement
+best_practices:
+  enforce_naming_convention: true
+  require_description: true
+  require_tests: true
+  require_documentation: true
+
+  commit_message_format:
+    pattern: "^(feat|fix|docs|style|refactor|test|chore)\\(.*\\): .+"
+    require_body: false
+    max_subject_length: 72
+
+  code_review:
+    required: true
+    min_reviewers: 1
+    require_approval_agent: true
+
+# Experimental features
+experimental:
+  ai_assisted_merge: true
+  predictive_conflict_detection: true
+  auto_optimization: true
+  learning_from_evaluations: true

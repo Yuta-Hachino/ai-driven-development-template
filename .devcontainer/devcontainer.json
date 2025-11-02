@@ -1,0 +1,45 @@
+{
+  "name": "Autonomous Dev CLI (Go)",
+  "image": "mcr.microsoft.com/devcontainers/go:1-1.21-bullseye",
+
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "ms-vscode.makefile-tools",
+        "eamodio.gitlens",
+        "github.vscode-pull-request-github",
+        "redhat.vscode-yaml"
+      ],
+      "settings": {
+        "go.toolsManagement.autoUpdate": true,
+        "go.useLanguageServer": true,
+        "go.lintTool": "golangci-lint",
+        "go.lintOnSave": "workspace",
+        "editor.formatOnSave": true,
+        "[go]": {
+          "editor.defaultFormatter": "golang.go",
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+          }
+        }
+      }
+    }
+  },
+
+  "postCreateCommand": "make deps",
+
+  "remoteEnv": {
+    "GOPATH": "/go",
+    "PATH": "${containerEnv:PATH}:/go/bin"
+  },
+
+  "forwardPorts": [],
+
+  "remoteUser": "vscode"
+}

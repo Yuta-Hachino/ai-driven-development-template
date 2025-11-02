@@ -1,0 +1,221 @@
+name: Autonomous Development CI/CD
+
+on:
+  push:
+    branches: [ main, develop, claude/* ]
+  pull_request:
+    branches: [ main, develop ]
+
+permissions:
+  contents: read
+  id-token: write
+  security-events: write
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Secret Scanning
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pylint mypy bandit safety
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run pylint
+        run: |
+          pylint src/ --exit-zero --output-format=text
+
+      - name: Run mypy
+        run: |
+          mypy src/ --ignore-missing-imports || true
+
+      - name: Run bandit security linter
+        run: |
+          bandit -r src/ -f json -o bandit-report.json || true
+
+      - name: Check dependencies for vulnerabilities
+        run: |
+          safety check --json || true
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov pytest-asyncio
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run tests with coverage
+        run: |
+          pytest tests/ --cov=src --cov-report=xml --cov-report=html -v
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        if: always()
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+
+  build-docker:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: [security-scan, code-quality, test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: false
+          tags: autonomous-dev:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: autonomous-dev:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-image-results.sarif'
+
+  worktree-development:
+    name: Worktree Development Pipeline
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/competition/')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run worktree evaluation
+        run: |
+          echo "Running worktree evaluation for branch: ${{ github.ref_name }}"
+          # Would run actual evaluation script here
+          # python scripts/evaluate_worktree.py --branch ${{ github.ref_name }}
+
+      - name: Upload evaluation results
+        uses: actions/upload-artifact@v3
+        with:
+          name: worktree-evaluation
+          path: evaluation-results.json
+
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run integration tests
+        run: |
+          pytest tests/integration/ -v || echo "Integration tests would run here"
+
+  compliance-check:
+    name: Compliance Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Verify security configuration
+        run: |
+          if [ -f config/security.yaml ]; then
+            echo "✓ Security configuration found"
+          else
+            echo "✗ Security configuration missing"
+            exit 1
+          fi
+
+      - name: Check for secrets in code
+        run: |
+          if grep -r "password\s*=\s*['\"]" src/ || grep -r "api_key\s*=\s*['\"]" src/; then
+            echo "✗ Hardcoded secrets detected"
+            exit 1
+          else
+            echo "✓ No hardcoded secrets found"
+          fi

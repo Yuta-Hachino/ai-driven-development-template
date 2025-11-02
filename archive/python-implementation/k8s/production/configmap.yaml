@@ -1,0 +1,241 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: autonomous-dev-config
+  namespace: autonomous-dev-prod
+  labels:
+    app: autonomous-dev
+    environment: production
+data:
+  # Application settings
+  APP_NAME: "Autonomous Development System"
+  APP_VERSION: "1.0.0"
+  ENVIRONMENT: "production"
+
+  # Logging
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+  LOG_OUTPUT: "stdout"
+
+  # Performance
+  MAX_WORKERS: "10"
+  WORKER_TIMEOUT: "300"
+  MAX_CONCURRENT_TASKS: "50"
+
+  # Features
+  ENABLE_AUTO_HEALING: "true"
+  ENABLE_MULTI_INSTANCE: "true"
+  ENABLE_PROJECT_MEMORY: "true"
+  ENABLE_METRICS: "true"
+
+  # Timeouts
+  REQUEST_TIMEOUT: "60"
+  HEALTH_CHECK_TIMEOUT: "5"
+  SHUTDOWN_TIMEOUT: "30"
+
+  # Resource limits
+  MAX_WORKTREES: "50"
+  MAX_AGENTS: "20"
+  MAX_MEMORY_MB: "8192"
+
+  # Monitoring
+  METRICS_PORT: "9090"
+  METRICS_PATH: "/metrics"
+  PROMETHEUS_ENABLED: "true"
+
+  # Security
+  ENABLE_RBAC: "true"
+  ENABLE_AUDIT_LOG: "true"
+  ENABLE_ENCRYPTION: "true"
+  SESSION_TIMEOUT: "3600"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: autonomous-dev-app-config
+  namespace: autonomous-dev-prod
+  labels:
+    app: autonomous-dev
+    environment: production
+    config-type: application
+data:
+  config.yaml: |
+    # Autonomous Development System Configuration
+    version: "1.0.0"
+    environment: production
+
+    # Agent Configuration
+    agents:
+      max_concurrent: 20
+      timeout_seconds: 300
+      rate_limit:
+        requests_per_minute: 100
+        burst_size: 150
+
+    # Worktree Configuration
+    worktrees:
+      base_path: "/app/data/worktrees"
+      max_active: 50
+      cleanup_after_hours: 72
+      patterns:
+        - competition
+        - parallel
+        - ab_test
+        - role_based
+        - branch_tree
+
+    # Multi-Instance Configuration
+    multi_instance:
+      enabled: true
+      max_instances: 10
+      coordination:
+        message_queue_path: "/app/data/messages.jsonl"
+        shared_state_path: "/app/data/shared_state.json"
+        lock_timeout_seconds: 30
+
+    # Project Memory Configuration
+    project_memory:
+      enabled: true
+      storage_path: "/app/data/memory"
+      max_entries: 10000
+      retention_days: 365
+
+    # Auto-Healing Configuration
+    auto_healing:
+      enabled: true
+      max_retries: 3
+      strategies:
+        - auto_format
+        - fix_imports
+        - update_dependencies
+        - fix_tests
+
+    # Security Configuration
+    security:
+      encryption:
+        algorithm: "AES-256-GCM"
+      rbac:
+        enabled: true
+      audit_log:
+        enabled: true
+        retention_days: 90
+
+    # Monitoring Configuration
+    monitoring:
+      prometheus:
+        enabled: true
+        port: 9090
+      health_check:
+        enabled: true
+        interval_seconds: 30
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: autonomous-dev-prod
+  labels:
+    app: prometheus
+    environment: production
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      external_labels:
+        cluster: 'autonomous-dev-prod'
+        environment: 'production'
+
+    # Alertmanager configuration
+    alerting:
+      alertmanagers:
+      - static_configs:
+        - targets:
+          - alertmanager:9093
+
+    # Scrape configurations
+    scrape_configs:
+    # Autonomous Dev application metrics
+    - job_name: 'autonomous-dev'
+      kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+          - autonomous-dev-prod
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        target_label: __address__
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: kubernetes_namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: kubernetes_pod_name
+
+    # Kubernetes API server
+    - job_name: 'kubernetes-apiservers'
+      kubernetes_sd_configs:
+      - role: endpoints
+      scheme: https
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+        action: keep
+        regex: default;kubernetes;https
+
+    # Kubernetes nodes
+    - job_name: 'kubernetes-nodes'
+      kubernetes_sd_configs:
+      - role: node
+      scheme: https
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      relabel_configs:
+      - action: labelmap
+        regex: __meta_kubernetes_node_label_(.+)
+
+    # Kubernetes pods
+    - job_name: 'kubernetes-pods'
+      kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+          - autonomous-dev-prod
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        target_label: __address__
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: kubernetes_namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: kubernetes_pod_name

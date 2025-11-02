@@ -1,0 +1,30 @@
+{
+  "name": "@autonomous-dev/cli",
+  "version": "1.0.0",
+  "description": "Multi-instance Claude Code orchestrator for parallel development",
+  "main": "index.js",
+  "bin": {
+    "autonomous-dev": "./bin/autonomous-dev.js"
+  },
+  "scripts": {
+    "postinstall": "node scripts/install.js"
+  },
+  "keywords": [
+    "autonomous",
+    "development",
+    "claude-code",
+    "ai",
+    "parallel",
+    "cli"
+  ],
+  "author": "Autonomous Dev Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/autonomous-dev/cli.git"
+  },
+  "homepage": "https://github.com/autonomous-dev/cli#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

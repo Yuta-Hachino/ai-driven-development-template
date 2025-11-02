@@ -1,0 +1,344 @@
+# Security Scan Configuration
+# Defines thresholds, rules, and policies for security scanning
+
+# Vulnerability Thresholds
+thresholds:
+  # Maximum allowed vulnerabilities by severity
+  critical: 0
+  high: 5
+  medium: 20
+  low: -1  # -1 means unlimited
+
+  # Fail build on threshold breach
+  fail_on_critical: true
+  fail_on_high: false
+  fail_on_medium: false
+
+# Secret Scanning Configuration
+secrets:
+  # Enable secret scanning
+  enabled: true
+
+  # Scan history
+  scan_git_history: true
+
+  # Maximum depth to scan in git history
+  history_depth: 100
+
+  # Patterns to detect
+  patterns:
+    - api_keys
+    - aws_credentials
+    - github_tokens
+    - private_keys
+    - passwords
+    - database_urls
+    - jwt_secrets
+
+  # Allowlist (paths to exclude from secret scanning)
+  allowlist:
+    - tests/fixtures/
+    - tests/e2e/test_data/
+    - docs/examples/
+
+  # Custom patterns (regex)
+  custom_patterns:
+    - name: custom_api_key
+      pattern: 'CUSTOM_KEY_[A-Za-z0-9]{32}'
+      description: Custom API key pattern
+
+# Dependency Scanning Configuration
+dependencies:
+  # Enable dependency vulnerability scanning
+  enabled: true
+
+  # Scan dev dependencies
+  include_dev: true
+
+  # Vulnerability databases to use
+  databases:
+    - nvd  # National Vulnerability Database
+    - oss_index  # Sonatype OSS Index
+    - safety_db  # Safety DB for Python
+
+  # Exclude specific vulnerabilities (with justification)
+  excluded_vulnerabilities:
+    # Example:
+    # - id: CVE-2021-12345
+    #   reason: False positive - not applicable to our use case
+    #   expires: 2025-12-31
+
+  # Auto-fix configuration
+  auto_fix:
+    enabled: true
+    max_major_version_bump: 0  # Don't auto-upgrade major versions
+    create_pr: true
+    run_tests_before_merge: true
+
+# Static Code Analysis (SAST) Configuration
+sast:
+  # Enable static analysis
+  enabled: true
+
+  # Languages to scan
+  languages:
+    - python
+    - javascript
+    - typescript
+    - yaml
+    - json
+
+  # Severity levels to report
+  severity_levels:
+    - critical
+    - high
+    - medium
+
+  # Rules to enable
+  rules:
+    # CWE categories
+    - CWE-79   # XSS
+    - CWE-89   # SQL Injection
+    - CWE-78   # OS Command Injection
+    - CWE-22   # Path Traversal
+    - CWE-502  # Deserialization
+    - CWE-798  # Hard-coded Credentials
+    - CWE-327  # Weak Crypto
+
+  # Custom rules
+  custom_rules:
+    - id: no-eval
+      pattern: eval(...)
+      message: "Avoid using eval() - security risk"
+      severity: high
+
+    - id: no-shell-true
+      pattern: subprocess.*shell=True
+      message: "Avoid shell=True - command injection risk"
+      severity: high
+
+  # Exclude patterns
+  exclude_patterns:
+    - '*/tests/*'
+    - '*/test_*.py'
+    - '*_test.py'
+
+# Container Security Configuration
+containers:
+  # Enable container scanning
+  enabled: true
+
+  # Scan base images
+  scan_base_images: true
+
+  # Scan for misconfigurations
+  scan_config: true
+
+  # Dockerfile best practices
+  dockerfile_checks:
+    - no_root_user
+    - use_specific_tags
+    - minimize_layers
+    - security_updates
+    - no_secrets_in_layers
+
+  # Image signing
+  require_signed_images: false
+  trusted_registries:
+    - docker.io
+    - ghcr.io
+    - gcr.io
+
+# License Compliance Configuration
+licenses:
+  # Enable license scanning
+  enabled: true
+
+  # Allowed licenses
+  allowed:
+    - MIT
+    - Apache-2.0
+    - BSD-2-Clause
+    - BSD-3-Clause
+    - ISC
+    - Python-2.0
+
+  # Disallowed licenses
+  disallowed:
+    - GPL-3.0
+    - AGPL-3.0
+    - LGPL-3.0  # Sometimes allowed, configure as needed
+
+  # Require attribution
+  require_attribution: true
+
+  # Unknown license handling
+  unknown_license_action: warn  # warn, fail, or ignore
+
+# Infrastructure as Code (IaC) Security
+iac:
+  # Enable IaC scanning
+  enabled: true
+
+  # Frameworks to scan
+  frameworks:
+    - terraform
+    - kubernetes
+    - docker-compose
+    - cloudformation
+
+  # Check categories
+  checks:
+    - security
+    - compliance
+    - best_practices
+
+  # Compliance standards
+  compliance_standards:
+    - cis  # CIS Benchmarks
+    - pci  # PCI-DSS
+    - hipaa  # HIPAA
+    - gdpr  # GDPR
+
+# Code Quality & Security Metrics
+metrics:
+  # Enable metrics collection
+  enabled: true
+
+  # Metrics to track
+  track:
+    - vulnerability_count
+    - secret_count
+    - code_quality_score
+    - test_coverage
+    - dependency_freshness
+
+  # Quality gates
+  quality_gates:
+    min_code_quality_score: 80
+    min_test_coverage: 90
+    max_code_complexity: 10
+    max_function_length: 50
+    max_file_length: 500
+
+# Reporting Configuration
+reporting:
+  # Report formats
+  formats:
+    - json
+    - html
+    - sarif  # For GitHub Security tab
+
+  # Report destination
+  output_dir: security/scan_results
+
+  # Notification channels
+  notifications:
+    - type: github_issue
+      enabled: true
+      on_failure: true
+      labels:
+        - security
+        - automated
+
+    - type: console
+      enabled: true
+      color_output: true
+
+    - type: file
+      enabled: true
+      path: security/scan_results/latest.json
+
+  # Retention policy
+  retention:
+    keep_reports_days: 90
+    keep_latest_count: 50
+
+# Scan Scheduling
+scheduling:
+  # Run scans on schedule
+  enabled: true
+
+  # Cron expression (daily at 2 AM)
+  cron: "0 2 * * *"
+
+  # Scan on events
+  on_push: true
+  on_pull_request: true
+  on_schedule: true
+
+# Advanced Configuration
+advanced:
+  # Parallel scanning
+  parallel_scans: true
+  max_workers: 4
+
+  # Timeout per scan (minutes)
+  scan_timeout: 30
+
+  # Retry failed scans
+  retry_on_failure: true
+  max_retries: 3
+
+  # Cache scan results
+  cache_enabled: true
+  cache_ttl_hours: 24
+
+  # Incremental scanning (only scan changed files)
+  incremental_scan: true
+
+# Integration Configuration
+integrations:
+  # GitHub Advanced Security
+  github_security:
+    enabled: false
+    upload_sarif: true
+
+  # JIRA integration
+  jira:
+    enabled: false
+    create_tickets_for: critical,high
+    project_key: SEC
+
+  # Slack notifications
+  slack:
+    enabled: false
+    webhook_url: ${SLACK_WEBHOOK_URL}
+    channel: '#security-alerts'
+
+  # Email notifications
+  email:
+    enabled: false
+    recipients:
+      - security@example.com
+    on_critical: true
+
+# Exemptions & Overrides
+exemptions:
+  # Allow temporary exemptions with expiration
+  enabled: true
+
+  # Exemption list
+  items:
+    # Example:
+    # - vulnerability_id: CVE-2021-99999
+    #   reason: Mitigated by network controls
+    #   approved_by: security_team
+    #   expires: 2025-12-31
+
+# Audit & Compliance
+audit:
+  # Enable audit logging
+  enabled: true
+
+  # Log all scan activities
+  log_scans: true
+
+  # Log exemptions
+  log_exemptions: true
+
+  # Audit log retention (days)
+  retention_days: 365
+
+  # Audit log location
+  log_file: security/audit.log

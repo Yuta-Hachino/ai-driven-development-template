@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autonomous Development - Progress Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #2d3748;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #718096;
+            font-size: 16px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .metric-value {
+            font-size: 48px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .metric-label {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s ease;
+        }
+
+        .instance-list {
+            list-style: none;
+        }
+
+        .instance-item {
+            padding: 12px;
+            margin: 8px 0;
+            background: #f7fafc;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .instance-status {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-idle {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .status-busy {
+            background: #feebc8;
+            color: #7c2d12;
+        }
+
+        .task-list {
+            list-style: none;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .task-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: #f7fafc;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+        }
+
+        .task-title {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .task-meta {
+            font-size: 12px;
+            color: #718096;
+            display: flex;
+            gap: 15px;
+            margin-top: 8px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-completed {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .badge-in-progress {
+            background: #bee3f8;
+            color: #2c5282;
+        }
+
+        .badge-blocked {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .badge-pending {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .bottleneck-alert {
+            background: #fff5f5;
+            border-left: 4px solid #f56565;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .bottleneck-title {
+            font-weight: 600;
+            color: #742a2a;
+            margin-bottom: 5px;
+        }
+
+        .bottleneck-description {
+            font-size: 14px;
+            color: #c53030;
+        }
+
+        .recommendation {
+            background: #f0fff4;
+            border-left: 4px solid #48bb78;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #22543d;
+        }
+
+        .chart-container {
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        .refresh-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .refresh-button:hover {
+            transform: scale(1.05);
+        }
+
+        .last-updated {
+            color: #718096;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        .icon {
+            font-size: 24px;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .loading {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 Autonomous Development Progress Monitor</h1>
+            <p class="subtitle">Real-time tracking of Claude Code instances and development tasks</p>
+            <button class="refresh-button" onclick="loadData()">🔄 Refresh Data</button>
+            <div class="last-updated" id="lastUpdated">Last updated: Never</div>
+        </header>
+
+        <div class="grid">
+            <!-- Overall Progress -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Overall Progress</span>
+                    <span class="icon">📊</span>
+                </div>
+                <div class="metric-value" id="overallProgress">0%</div>
+                <div class="metric-label">Completion Rate</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+                <div class="metric-label">
+                    <span id="completedTasks">0</span> / <span id="totalTasks">0</span> tasks completed
+                </div>
+            </div>
+
+            <!-- Velocity -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Development Velocity</span>
+                    <span class="icon">⚡</span>
+                </div>
+                <div class="metric-value" id="velocity">0.0</div>
+                <div class="metric-label">tasks per day</div>
+                <div class="metric-label" style="margin-top: 10px;">
+                    Estimated completion: <strong id="estimatedCompletion">Calculating...</strong>
+                </div>
+            </div>
+
+            <!-- Active Instances -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Active Instances</span>
+                    <span class="icon">💻</span>
+                </div>
+                <div class="metric-value" id="activeInstances">0</div>
+                <div class="metric-label">Claude Code instances working</div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- Task Status Breakdown -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Task Status</span>
+                    <span class="icon">📋</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+                    <div>
+                        <div style="font-size: 24px; font-weight: 700; color: #48bb78;" id="tasksCompleted">0</div>
+                        <div class="metric-label">Completed</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 24px; font-weight: 700; color: #4299e1;" id="tasksInProgress">0</div>
+                        <div class="metric-label">In Progress</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 24px; font-weight: 700; color: #ed8936;" id="tasksBlocked">0</div>
+                        <div class="metric-label">Blocked</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 24px; font-weight: 700; color: #a0aec0;" id="tasksPending">0</div>
+                        <div class="metric-label">Pending</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instances Status -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Claude Code Instances</span>
+                    <span class="icon">🤖</span>
+                </div>
+                <ul class="instance-list" id="instanceList">
+                    <li class="instance-item loading">
+                        <span>Loading instances...</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Bottlenecks -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">🚨 Active Bottlenecks</span>
+            </div>
+            <div id="bottleneckList">
+                <div class="metric-label loading">Loading bottlenecks...</div>
+            </div>
+        </div>
+
+        <!-- Recommendations -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">💡 Recommendations</span>
+            </div>
+            <div id="recommendationList">
+                <div class="metric-label loading">Loading recommendations...</div>
+            </div>
+        </div>
+
+        <!-- Recent Tasks -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Recent Tasks</span>
+                <span class="icon">📝</span>
+            </div>
+            <ul class="task-list" id="taskList">
+                <li class="task-item loading">
+                    <div class="task-title">Loading tasks...</div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // API endpoints (adjust these to your backend)
+        const API_BASE = '/api';
+        const PROGRESS_ENDPOINT = `${API_BASE}/progress`;
+        const INSTANCES_ENDPOINT = `${API_BASE}/instances`;
+        const TASKS_ENDPOINT = `${API_BASE}/tasks`;
+
+        // For demo purposes, we'll use mock data
+        // In production, replace with actual API calls
+
+        async function loadData() {
+            try {
+                // In production, fetch from actual endpoints:
+                // const progressData = await fetch(PROGRESS_ENDPOINT).then(r => r.json());
+
+                // Mock data for demonstration
+                const progressData = await loadProgressData();
+                updateDashboard(progressData);
+
+                document.getElementById('lastUpdated').textContent =
+                    `Last updated: ${new Date().toLocaleString()}`;
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        async function loadProgressData() {
+            // Mock data - replace with actual API call
+            return {
+                overall_completion: 67.5,
+                tasks_completed: 27,
+                tasks_in_progress: 8,
+                tasks_blocked: 2,
+                total_tasks: 40,
+                velocity: 3.2,
+                estimated_completion_date: '2025-11-15',
+                instance_performance: {
+                    1: { tasks_completed: 12, tasks_in_progress: 2, tasks_blocked: 0, status: 'active' },
+                    2: { tasks_completed: 10, tasks_in_progress: 3, tasks_blocked: 1, status: 'active' },
+                    3: { tasks_completed: 5, tasks_in_progress: 3, tasks_blocked: 1, status: 'active' },
+                    4: { tasks_completed: 0, tasks_in_progress: 0, tasks_blocked: 0, status: 'idle' }
+                },
+                bottlenecks: [
+                    'Task blocked: Waiting for API documentation',
+                    'Instance overloaded: Instance 2 has 4 concurrent tasks'
+                ],
+                recommendations: [
+                    'Assign 3 pending tasks to idle Instance 4',
+                    'Resolve blocked tasks to maintain velocity',
+                    'Consider redistributing tasks from Instance 2'
+                ],
+                recent_tasks: [
+                    { id: 1, title: 'Implement authentication system', status: 'completed', instance: 1 },
+                    { id: 2, title: 'Create user dashboard UI', status: 'in_progress', instance: 2 },
+                    { id: 3, title: 'Write API documentation', status: 'blocked', instance: 3 },
+                    { id: 4, title: 'Add unit tests for auth', status: 'completed', instance: 1 },
+                    { id: 5, title: 'Implement data encryption', status: 'in_progress', instance: 2 },
+                ]
+            };
+        }
+
+        function updateDashboard(data) {
+            // Overall progress
+            document.getElementById('overallProgress').textContent =
+                `${data.overall_completion.toFixed(1)}%`;
+            document.getElementById('progressFill').style.width =
+                `${data.overall_completion}%`;
+            document.getElementById('completedTasks').textContent = data.tasks_completed;
+            document.getElementById('totalTasks').textContent = data.total_tasks;
+
+            // Velocity
+            document.getElementById('velocity').textContent = data.velocity.toFixed(1);
+            if (data.estimated_completion_date) {
+                const date = new Date(data.estimated_completion_date);
+                document.getElementById('estimatedCompletion').textContent =
+                    date.toLocaleDateString();
+            }
+
+            // Active instances
+            const activeCount = Object.values(data.instance_performance)
+                .filter(i => i.status === 'active').length;
+            document.getElementById('activeInstances').textContent = activeCount;
+
+            // Task breakdown
+            document.getElementById('tasksCompleted').textContent = data.tasks_completed;
+            document.getElementById('tasksInProgress').textContent = data.tasks_in_progress;
+            document.getElementById('tasksBlocked').textContent = data.tasks_blocked;
+            const pending = data.total_tasks - data.tasks_completed -
+                           data.tasks_in_progress - data.tasks_blocked;
+            document.getElementById('tasksPending').textContent = pending;
+
+            // Instances list
+            const instanceList = document.getElementById('instanceList');
+            instanceList.innerHTML = '';
+            Object.entries(data.instance_performance).forEach(([id, perf]) => {
+                const li = document.createElement('li');
+                li.className = 'instance-item';
+
+                const statusClass = perf.status === 'active' ? 'status-active' :
+                                   perf.status === 'idle' ? 'status-idle' : 'status-busy';
+
+                li.innerHTML = `
+                    <span>Instance ${id} (${perf.tasks_completed} completed)</span>
+                    <span class="instance-status ${statusClass}">${perf.status}</span>
+                `;
+                instanceList.appendChild(li);
+            });
+
+            // Bottlenecks
+            const bottleneckList = document.getElementById('bottleneckList');
+            if (data.bottlenecks && data.bottlenecks.length > 0) {
+                bottleneckList.innerHTML = data.bottlenecks.map(b => `
+                    <div class="bottleneck-alert">
+                        <div class="bottleneck-title">Active Bottleneck</div>
+                        <div class="bottleneck-description">${b}</div>
+                    </div>
+                `).join('');
+            } else {
+                bottleneckList.innerHTML = '<div class="metric-label">No bottlenecks detected ✅</div>';
+            }
+
+            // Recommendations
+            const recommendationList = document.getElementById('recommendationList');
+            if (data.recommendations && data.recommendations.length > 0) {
+                recommendationList.innerHTML = data.recommendations.map(r => `
+                    <div class="recommendation">${r}</div>
+                `).join('');
+            } else {
+                recommendationList.innerHTML = '<div class="metric-label">No recommendations at this time</div>';
+            }
+
+            // Recent tasks
+            const taskList = document.getElementById('taskList');
+            if (data.recent_tasks && data.recent_tasks.length > 0) {
+                taskList.innerHTML = data.recent_tasks.map(task => {
+                    const badgeClass = `badge-${task.status.replace('_', '-')}`;
+                    return `
+                        <li class="task-item">
+                            <div class="task-title">${task.title}</div>
+                            <div class="task-meta">
+                                <span class="badge ${badgeClass}">${task.status}</span>
+                                <span>Instance ${task.instance}</span>
+                            </div>
+                        </li>
+                    `;
+                }).join('');
+            } else {
+                taskList.innerHTML = '<li class="task-item"><div class="task-title">No tasks found</div></li>';
+            }
+        }
+
+        // Load data on page load
+        loadData();
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadData, 30000);
+    </script>
+</body>
+</html>
