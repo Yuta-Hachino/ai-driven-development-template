@@ -53,28 +53,74 @@ jobs:
           echo "Instance ${{ matrix.instance }} starting..."
           echo "Processing issue #${{ inputs.issue_number }}"
 
+      - name: Setup status reporter
+        run: |
+          # Make status reporter executable
+          chmod +x ./scripts/instance-status-reporter.sh
+
       - name: Run autonomous development
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           INSTANCE_ID: ${{ matrix.instance }}
           ISSUE_NUMBER: ${{ inputs.issue_number }}
           TOTAL_INSTANCES: ${{ inputs.instance_count }}
+          ROLE: ${{ matrix.instance == 1 && 'leader' || 'worker' }}
         run: |
-          # This is where Claude Code execution logic would go
-          # For now, this is a placeholder that demonstrates the structure
+          # Source status reporter
+          source ./scripts/instance-status-reporter.sh
+
+          # Start logging
+          exec > >(tee -a /tmp/instance-$INSTANCE_ID.log)
+          exec 2>&1
 
           echo "🤖 Instance $INSTANCE_ID starting..."
           echo "📋 Task: Issue #$ISSUE_NUMBER"
           echo "👥 Total instances: $TOTAL_INSTANCES"
+          echo "🎭 Role: $ROLE"
 
-          # Post to issue for P2P coordination
-          gh issue comment $ISSUE_NUMBER --body "🤖 Instance $INSTANCE_ID: Starting work..."
+          # Report initial status
+          report_status "starting" "init" "Initializing instance" 0 "$(tail -10 /tmp/instance-$INSTANCE_ID.log)"
 
-          # Simulate work (in production, this would be Claude Code execution)
-          sleep 10
+          # Leader: Wait for workers to start
+          if [ "$ROLE" = "leader" ]; then
+            echo "👑 Acting as leader, waiting for workers..."
+            sleep 5
+
+            # Check worker instances
+            check_workers
+
+            # TODO: Distribute tasks based on worker availability
+            echo "📋 Distributing tasks to workers..."
+          fi
+
+          # Worker: Wait for task assignment
+          if [ "$ROLE" = "worker" ]; then
+            echo "👷 Acting as worker, waiting for task assignment..."
+
+            # Report ready status
+            report_status "ready" "waiting" "Waiting for task assignment" 0 "$(tail -10 /tmp/instance-$INSTANCE_ID.log)"
+
+            # TODO: Poll for task assignment from leader
+            sleep 5
+          fi
+
+          # Simulate work with progress reporting
+          for progress in 25 50 75; do
+            echo "⏳ Progress: $progress%%"
+            report_status "in_progress" "task-$INSTANCE_ID" "Working on assigned task" $progress "$(tail -10 /tmp/instance-$INSTANCE_ID.log)"
+            sleep 5
+          done
 
           # Report completion
-          gh issue comment $ISSUE_NUMBER --body "✅ Instance $INSTANCE_ID: Task completed"
+          echo "✅ Instance $INSTANCE_ID: Task completed"
+          report_status "completed" "task-$INSTANCE_ID" "Task completed successfully" 100 "$(tail -10 /tmp/instance-$INSTANCE_ID.log)"
+
+          # Leader: Final check
+          if [ "$ROLE" = "leader" ]; then
+            echo "👑 Leader final check..."
+            check_workers
+            echo "✅ All workers completed"
+          fi
 
       - name: Report status
         if: always()
