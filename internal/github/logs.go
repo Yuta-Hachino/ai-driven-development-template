@@ -2,18 +2,15 @@ package github
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"net/http"
 	"strings"
-
-	"github.com/google/go-github/v56/github"
 )
 
 // GetWorkflowLogs gets logs for a workflow run
 func (c *Client) GetWorkflowLogs(runID int64) (string, error) {
-	// Get logs URL
-	url, _, err := c.client.Actions.GetWorkflowRunLogs(c.ctx, c.owner, c.repo, runID, true)
+	// Get logs URL (followRedirects: 1 = true, 0 = false)
+	url, _, err := c.client.Actions.GetWorkflowRunLogs(c.ctx, c.owner, c.repo, runID, 1)
 	if err != nil {
 		return "", fmt.Errorf("failed to get logs URL: %w", err)
 	}
@@ -58,7 +55,7 @@ func (c *Client) StreamWorkflowLogs(runID int64, callback func(string)) error {
 
 // GetJobLogs gets logs for a specific job
 func (c *Client) GetJobLogs(jobID int64) (string, error) {
-	logs, _, err := c.client.Actions.GetWorkflowJobLogs(c.ctx, c.owner, c.repo, jobID, true)
+	logs, _, err := c.client.Actions.GetWorkflowJobLogs(c.ctx, c.owner, c.repo, jobID, 1)
 	if err != nil {
 		return "", fmt.Errorf("failed to get job logs: %w", err)
 	}
