@@ -69,8 +69,8 @@ nfpms:
 
 release:
   github:
-    owner: autonomous-dev
-    name: cli
+    owner: Yuta-Hachino
+    name: ai-driven-development-template
   draft: false
   prerelease: auto
   name_template: "{{.Version}}"
