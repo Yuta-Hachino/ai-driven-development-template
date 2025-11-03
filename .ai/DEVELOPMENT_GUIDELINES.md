@@ -135,6 +135,36 @@ fix-bug
 main
 ```
 
+### Branch Cleanup
+
+**IMPORTANT**: Delete merged branches to keep the repository clean.
+
+#### After PR is Merged
+
+```bash
+# 1. Check which branches are merged
+git fetch origin main:main
+git branch --merged main | grep claude/
+
+# 2. Delete local merged branches
+git branch -d claude/your-old-branch-SESSION_ID
+
+# 3. Delete remote merged branches
+git push origin --delete claude/your-old-branch-SESSION_ID
+```
+
+#### Automated Cleanup (Recommended)
+
+```bash
+# Delete all local merged branches (except current)
+git branch --merged main | grep -v "\*" | grep claude/ | xargs -r git branch -d
+
+# Delete corresponding remote branches
+git branch -r --merged main | grep origin/claude/ | sed 's/origin\///' | xargs -r -I {} git push origin --delete {}
+```
+
+**Best Practice**: Clean up branches after every successful PR merge.
+
 ### Commit Message Format
 
 Use conventional commits:
@@ -563,6 +593,14 @@ VERSION                        # Version number
 .goreleaser.yml               # Release configuration
 ```
 
+### Branch Cleanup (After PR Merge)
+
+```bash
+# Delete merged branches
+git branch --merged main | grep claude/ | xargs -r git branch -d
+git push origin --delete claude/old-branch-name
+```
+
 ### Getting Help
 
 - Project docs: `docs/`
@@ -582,6 +620,7 @@ You're doing well if:
 - ✅ CI passes on GitHub (green checkmarks)
 - ✅ No binary files in git status
 - ✅ Branch names start with `claude/`
+- ✅ Merged branches are deleted (clean repository)
 
 ---
 
