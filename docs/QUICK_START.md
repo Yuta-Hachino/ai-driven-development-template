@@ -22,20 +22,13 @@ Get up and running with Autonomous Dev in **5 minutes**.
 
 Choose your preferred installation method:
 
-### Option A: Homebrew (macOS/Linux)
-
-```bash
-brew tap autonomous-dev/tap
-brew install autonomous-dev
-```
-
-### Option B: npm (Any OS)
+### Option A: npm (Any OS)
 
 ```bash
 npm install -g @autonomous-dev/cli
 ```
 
-### Option C: Direct Download
+### Option B: Direct Download
 
 ```bash
 # macOS (Apple Silicon)

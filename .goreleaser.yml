@@ -52,20 +52,6 @@ changelog:
       - '^chore:'
       - '^ci:'
 
-brews:
-  - name: autonomous-dev
-    repository:
-      owner: autonomous-dev
-      name: homebrew-tap
-    folder: Formula
-    homepage: https://github.com/autonomous-dev/cli
-    description: Multi-instance Claude Code orchestrator for parallel development
-    license: MIT
-    test: |
-      system "#{bin}/autonomous-dev --version"
-    install: |
-      bin.install "autonomous-dev"
-
 nfpms:
   - id: default
     package_name: autonomous-dev
