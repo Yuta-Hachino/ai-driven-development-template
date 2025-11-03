@@ -6,7 +6,7 @@ Complete guide to the automated release workflow for Autonomous Dev CLI.
 
 ## Overview
 
-The release process is **fully automated** through GitHub Actions. Developers only need to create a version tag, and the rest happens automatically.
+The release process is **fully automated** through GitHub Actions. When a PR is merged to `main`, a new release is automatically created based on the `VERSION` file.
 
 **Time to Release**: ~5 minutes (fully automated)
 
@@ -15,71 +15,90 @@ The release process is **fully automated** through GitHub Actions. Developers on
 - npm (all platforms)
 - apt/yum (Linux packages)
 
+**Trigger Methods**:
+1. **Automatic**: Merge PR to `main` (recommended)
+2. **Manual**: Run workflow from GitHub UI
+3. **Legacy**: Push version tag (backward compatible)
+
 ---
 
 ## Quick Release (TL;DR)
 
+### Method 1: Automatic (Recommended)
+
 ```bash
-# 1. Ensure you're on main branch with latest changes
-git checkout main
-git pull origin main
+# 1. Update VERSION file in your branch
+echo "0.2.0" > VERSION
+git add VERSION
+git commit -m "chore: Bump version to 0.2.0"
 
-# 2. Create and push version tag
-git tag v1.0.1
-git push origin v1.0.1
+# 2. Create PR and merge to main
+git push origin your-feature-branch
 
-# 3. Wait ~5 minutes, release is live ✅
+# 3. Merge PR on GitHub → Release automatically triggers! ✅
 ```
+
+### Method 2: Manual Trigger
+
+1. Go to: https://github.com/your-org/your-repo/actions/workflows/release.yml
+2. Click "Run workflow"
+3. Enter version (e.g., `0.2.0`)
+4. Click "Run workflow" button ✅
 
 ---
 
 ## Detailed Workflow
 
-### Step 1: Pre-Release Checklist
+### Step 1: Decide on Version Number
 
-Before creating a release tag, ensure:
+Follow [Semantic Versioning](https://semver.org/):
+- **MAJOR** (1.0.0 → 2.0.0): Breaking changes, incompatible API
+- **MINOR** (1.0.0 → 1.1.0): New features, backward compatible
+- **PATCH** (1.0.0 → 1.0.1): Bug fixes, backward compatible
 
-- [ ] All intended changes are merged to `main` branch
-- [ ] Tests are passing (`go test ./...`)
-- [ ] `CHANGELOG.md` is updated (if exists)
-- [ ] Version number follows [Semantic Versioning](https://semver.org/)
-  - MAJOR.MINOR.PATCH (e.g., `1.2.3`)
-  - Breaking changes → MAJOR version bump
-  - New features → MINOR version bump
-  - Bug fixes → PATCH version bump
+### Step 2: Update VERSION File
 
-### Step 2: Create Version Tag
+In your feature branch:
 
 ```bash
-# Switch to main branch
-git checkout main
-git pull origin main
+# Update VERSION file
+echo "1.2.0" > VERSION
 
-# Create annotated tag (recommended)
-git tag -a v1.0.1 -m "Release v1.0.1: Add feature X, fix bug Y"
-
-# Or lightweight tag
-git tag v1.0.1
-
-# Push tag to trigger release
-git push origin v1.0.1
+# Commit the change
+git add VERSION
+git commit -m "chore: Bump version to 1.2.0"
 ```
 
-**Tag Naming Convention**: Must start with `v` (e.g., `v1.0.0`, `v2.1.3`)
+**Important**: The `VERSION` file contains only the version number (no `v` prefix).
 
-### Step 3: Automated Release Process
+### Step 3: Create PR and Merge
 
-Once the tag is pushed, `.github/workflows/release.yml` is triggered:
+```bash
+# Push your branch
+git push origin feature/my-feature
+
+# Create PR on GitHub
+# Review, approve, merge to main
+```
+
+### Step 4: Automated Release Process
+
+Once merged to `main`, `.github/workflows/release.yml` is triggered automatically:
 
 #### Job 1: `goreleaser` (Build & Publish Binaries)
 
 ```
 1. Checkout repository with full git history
-2. Setup Go 1.21 environment
-3. Run tests (go test ./...)
+2. Read version from VERSION file
+3. Check if tag v{VERSION} already exists
+   ├─ If exists → skip release ⏭️
+   └─ If new → continue ✓
+4. Create git tag v{VERSION}
+5. Setup Go 1.21 environment
+6. Run tests (go test ./...)
    ├─ If tests fail → workflow stops ❌
    └─ If tests pass → continue ✓
-4. Execute GoReleaser
+7. Execute GoReleaser
    ├─ Build binaries (6 platforms)
    │  ├─ linux/amd64
    │  ├─ linux/arm64

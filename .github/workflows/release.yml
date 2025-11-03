@@ -2,8 +2,16 @@ name: Release
 
 on:
   push:
+    branches:
+      - main  # mainへのマージで自動リリース
     tags:
-      - 'v*'  # v1.0.0, v1.2.3 等のタグでトリガー
+      - 'v*'  # v1.0.0, v1.2.3 等のタグでトリガー（後方互換）
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 0.1.0)'
+        required: true
+        type: string
 
 permissions:
   contents: write  # GitHub Releasesへの書き込み
@@ -12,23 +20,62 @@ permissions:
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.version.outputs.skip }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # 全履歴取得（changelogに必要）
 
+      - name: Set version
+        id: version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # 手動トリガー: 入力されたバージョンを使用
+            VERSION="${{ github.event.inputs.version }}"
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
+            # タグプッシュ: タグからバージョンを取得
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            # mainブランチへのプッシュ: VERSIONファイルから読み取り
+            VERSION=$(cat VERSION | tr -d '\n')
+
+            # 既に同じバージョンのタグが存在するかチェック
+            if git ls-remote --tags origin | grep -q "refs/tags/v${VERSION}$"; then
+              echo "⚠️  Tag v${VERSION} already exists. Skipping release."
+              echo "skip=true" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          fi
+
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "skip=false" >> $GITHUB_OUTPUT
+          echo "📦 Releasing version: ${VERSION}"
+
+          # タグが存在しない場合は作成
+          if ! git rev-parse "v${VERSION}" >/dev/null 2>&1; then
+            git tag -a "v${VERSION}" -m "Release v${VERSION}"
+            echo "✅ Created tag v${VERSION}"
+          fi
+
       - name: Setup Go
+        if: steps.version.outputs.skip != 'true'
         uses: actions/setup-go@v5
         with:
           go-version: '1.21'
 
       - name: Run tests
+        if: steps.version.outputs.skip != 'true'
         run: |
           go mod download
           go test ./...
 
       - name: Run GoReleaser
+        if: steps.version.outputs.skip != 'true'
         uses: goreleaser/goreleaser-action@v5
         with:
           distribution: goreleaser
@@ -40,9 +87,22 @@ jobs:
   update-npm:
     needs: goreleaser
     runs-on: ubuntu-latest
+    if: needs.goreleaser.outputs.skip != 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Get version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            VERSION=$(cat VERSION | tr -d '\n')
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -53,8 +113,7 @@ jobs:
       - name: Update npm package version
         run: |
           cd npm
-          VERSION=${GITHUB_REF#refs/tags/v}
-          npm version $VERSION --no-git-tag-version
+          npm version ${{ steps.get_version.outputs.version }} --no-git-tag-version
 
       - name: Publish to npm
         run: |
