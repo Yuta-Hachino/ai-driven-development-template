@@ -102,3 +102,18 @@ docs/_templates/
 # Package manager
 poetry.lock
 Pipfile.lock
+
+# Go
+autonomous-dev
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Go build artifacts
+/bin/
+/pkg/
