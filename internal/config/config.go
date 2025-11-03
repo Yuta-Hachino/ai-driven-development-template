@@ -10,10 +10,10 @@ import (
 
 // Config represents the autonomous-dev configuration
 type Config struct {
-	GitHub   GitHubConfig    `yaml:"github"`
+	GitHub    GitHubConfig    `yaml:"github"`
 	Instances InstancesConfig `yaml:"instances"`
-	Agents   []Agent         `yaml:"agents"`
-	Workflow WorkflowConfig  `yaml:"workflow"`
+	Agents    []Agent         `yaml:"agents"`
+	Workflow  WorkflowConfig  `yaml:"workflow"`
 }
 
 // GitHubConfig represents GitHub-related settings

@@ -56,8 +56,8 @@ func NewClient(token, owner, repo string) *Client {
 // CreateIssue creates a new GitHub issue
 func (c *Client) CreateIssue(title, body string) (*Issue, error) {
 	issueReq := &github.IssueRequest{
-		Title: &title,
-		Body:  &body,
+		Title:  &title,
+		Body:   &body,
 		Labels: &[]string{"autonomous-dev"},
 	}
 
