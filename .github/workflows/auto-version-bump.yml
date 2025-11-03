@@ -1,0 +1,137 @@
+name: Auto Version Bump
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  bump-version:
+    if: github.event.pull_request.merged == true && !contains(github.event.pull_request.title, '[skip version]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Analyze commits and determine version bump
+        id: version
+        run: |
+          echo "Analyzing commits in PR #${{ github.event.pull_request.number }}"
+
+          # Get current version
+          CURRENT_VERSION=$(cat VERSION | tr -d '\n')
+          echo "Current version: $CURRENT_VERSION"
+
+          # Parse current version
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+
+          # Get all commit messages from the PR
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+
+          # Fetch commits
+          git fetch origin $BASE_SHA $HEAD_SHA
+
+          # Get commit messages
+          COMMITS=$(git log --format="%s%n%b" $BASE_SHA..$HEAD_SHA)
+
+          echo "Commit messages:"
+          echo "$COMMITS"
+          echo ""
+
+          # Determine bump type
+          BUMP_TYPE="none"
+
+          # Check for breaking changes (highest priority)
+          if echo "$COMMITS" | grep -qE "^(feat|fix|refactor)!:|BREAKING CHANGE:"; then
+            BUMP_TYPE="major"
+            echo "🚨 Breaking change detected → MAJOR bump"
+          # Check for features (second priority)
+          elif echo "$COMMITS" | grep -qE "^feat(\(.*\))?:"; then
+            BUMP_TYPE="minor"
+            echo "✨ Feature detected → MINOR bump"
+          # Check for fixes and other changes (lowest priority)
+          elif echo "$COMMITS" | grep -qE "^(fix|docs|style|refactor|test|chore|perf|ci)(\(.*\))?:"; then
+            BUMP_TYPE="patch"
+            echo "🐛 Fix/improvement detected → PATCH bump"
+          else
+            echo "⚠️  No conventional commits found, skipping version bump"
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Calculate new version
+          case $BUMP_TYPE in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+
+          echo "Version bump: $CURRENT_VERSION → $NEW_VERSION ($BUMP_TYPE)"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
+          echo "skip=false" >> $GITHUB_OUTPUT
+
+      - name: Update VERSION file
+        if: steps.version.outputs.skip != 'true'
+        run: |
+          echo "${{ steps.version.outputs.new_version }}" > VERSION
+          echo "✅ Updated VERSION file to ${{ steps.version.outputs.new_version }}"
+
+      - name: Commit version bump
+        if: steps.version.outputs.skip != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add VERSION
+          git commit -m "chore: Bump version to ${{ steps.version.outputs.new_version }} [${{ steps.version.outputs.bump_type }}]
+
+Automatic version bump from PR #${{ github.event.pull_request.number }}
+Bump type: ${{ steps.version.outputs.bump_type }}
+
+PR: ${{ github.event.pull_request.html_url }}"
+
+      - name: Push changes
+        if: steps.version.outputs.skip != 'true'
+        run: |
+          git push origin main
+          echo "🚀 Pushed version bump commit to main"
+          echo "⏳ Release workflow will trigger automatically"
+
+      - name: Comment on PR
+        if: steps.version.outputs.skip != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.payload.pull_request.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🎉 **Version bumped automatically**
+
+📦 **New version**: \`${{ steps.version.outputs.new_version }}\`
+📈 **Bump type**: \`${{ steps.version.outputs.bump_type }}\`
+
+The release workflow will trigger automatically and create release \`v${{ steps.version.outputs.new_version }}\` in ~5 minutes.
+
+🔗 [View Releases](https://github.com/${context.repo.owner}/${context.repo.repo}/releases)`
+            });

@@ -44,13 +44,35 @@ git status                      # No binaries
 
 ---
 
+### [VERSIONING_GUIDELINES.md](VERSIONING_GUIDELINES.md)
+
+**Versioning and release guide** - Automatic version management:
+
+- Semantic Versioning 2.0.0 (MAJOR.MINOR.PATCH)
+- Automatic version bumping based on commit messages
+- Conventional Commits format requirements
+- Manual vs automatic version updates
+- Examples and troubleshooting
+
+**Your commit messages control version bumps**:
+- `feat!:` or `BREAKING CHANGE:` → MAJOR bump
+- `feat:` → MINOR bump
+- `fix:`, `docs:`, `chore:` → PATCH bump
+
+**Use this** to understand how versioning works in this project.
+
+**Size**: ~500 lines, 15-20 minute read
+
+---
+
 ## 🎯 Quick Start for AI Assistants
 
 ### First Time Working on This Project?
 
 1. **Read**: [DEVELOPMENT_GUIDELINES.md](DEVELOPMENT_GUIDELINES.md) (Section 1-3)
 2. **Bookmark**: [PRE_COMMIT_CHECKLIST.md](PRE_COMMIT_CHECKLIST.md)
-3. **Remember**: Branch names must start with `claude/`
+3. **Understand**: [VERSIONING_GUIDELINES.md](VERSIONING_GUIDELINES.md) - Your commits control versions!
+4. **Remember**: Branch names must start with `claude/`
 
 ### Before Every Commit
 
@@ -105,6 +127,26 @@ git status                      # No binaries
 ---
 
 ## 🔄 Update History
+
+### Version 1.1.0 (2025-11-03)
+
+**Updated by**: Claude Code session 011CUgao5VMcJ1Du3197VsFD
+
+**Reason**: Manual version management causing release workflow failures:
+- VERSION file not updated → tag already exists errors
+- Manual version bumps required for every release
+- No standardized versioning process
+- Risk of incorrect version increments
+
+**Goal**: Automate version management and document versioning rules
+
+**Changes**:
+- Created VERSIONING_GUIDELINES.md (comprehensive versioning guide)
+- Created .github/workflows/auto-version-bump.yml (automatic version bumping)
+- Updated DEVELOPMENT_GUIDELINES.md (added versioning section)
+- Updated README.md (added versioning reference)
+
+---
 
 ### Version 1.0.0 (2025-11-03)
 

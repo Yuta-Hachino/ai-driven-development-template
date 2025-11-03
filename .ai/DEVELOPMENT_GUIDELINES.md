@@ -169,6 +169,33 @@ style: Apply gofmt formatting
 chore: Add Go build artifacts to .gitignore
 ```
 
+### Versioning
+
+**IMPORTANT**: This project uses **automatic version bumping** based on commit messages.
+
+**See full guide**: [VERSIONING_GUIDELINES.md](VERSIONING_GUIDELINES.md)
+
+**Quick rules**:
+- `feat!:` or `BREAKING CHANGE:` → **MAJOR** bump (1.0.0 → 2.0.0)
+- `feat:` → **MINOR** bump (1.0.0 → 1.1.0)
+- `fix:`, `docs:`, `chore:` → **PATCH** bump (1.0.0 → 1.0.1)
+
+**Your commit messages automatically control version bumps!**
+
+Example:
+```bash
+# This will trigger MINOR version bump (new feature)
+git commit -m "feat: Add export command"
+
+# This will trigger PATCH version bump (bug fix)
+git commit -m "fix: Correct status display"
+
+# This will trigger MAJOR version bump (breaking change)
+git commit -m "feat!: Remove deprecated API"
+```
+
+When your PR is merged, the version is automatically updated and a release is created. No manual VERSION file editing needed!
+
 ---
 
 ## 4. Pre-Commit Checklist

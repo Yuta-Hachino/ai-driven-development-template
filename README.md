@@ -485,6 +485,8 @@ If you're an AI assistant (Claude Code, GitHub Copilot, etc.) working on this pr
 
 **✅ Before Every Commit**: [`.ai/PRE_COMMIT_CHECKLIST.md`](.ai/PRE_COMMIT_CHECKLIST.md)
 
+**📦 Versioning**: [`.ai/VERSIONING_GUIDELINES.md`](.ai/VERSIONING_GUIDELINES.md) - Your commit messages control version bumps!
+
 These guidelines prevent common mistakes and ensure smooth development.
 
 ---
