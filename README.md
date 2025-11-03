@@ -477,6 +477,16 @@ Contributions are welcome! Please:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
+### For AI Assistants
+
+If you're an AI assistant (Claude Code, GitHub Copilot, etc.) working on this project:
+
+**📖 Read First**: [`.ai/DEVELOPMENT_GUIDELINES.md`](.ai/DEVELOPMENT_GUIDELINES.md)
+
+**✅ Before Every Commit**: [`.ai/PRE_COMMIT_CHECKLIST.md`](.ai/PRE_COMMIT_CHECKLIST.md)
+
+These guidelines prevent common mistakes and ensure smooth development.
+
 ---
 
 ## 📄 License
