@@ -30,6 +30,7 @@ Complete documentation for Autonomous Dev CLI.
 |----------|-------------|----------|
 | [Go CLI Design](GO_CLI_DESIGN.md) | Architecture and technical design | Developers, Contributors |
 | [P2P Architecture](P2P_ARCHITECTURE.md) | Peer-to-peer coordination system | Developers, Advanced Users |
+| [Release Workflow](RELEASE_WORKFLOW.md) | Automated release process and guidelines | Maintainers, Contributors |
 
 ---
 
@@ -49,6 +50,9 @@ Complete documentation for Autonomous Dev CLI.
 1. [P2P Monitoring](P2P_MONITORING.md) - Inter-instance communication
 2. [P2P Architecture](P2P_ARCHITECTURE.md) - System design
 3. [Go CLI Design](GO_CLI_DESIGN.md) - Implementation details
+
+### For Maintainers
+1. [Release Workflow](RELEASE_WORKFLOW.md) - How to release new versions
 
 ---
 
@@ -93,6 +97,15 @@ See [Contributing Guide](../README.md#contributing) for details.
 
 ## Changelog
 
+### 2025-11-03 - Release Automation Documentation
+
+**Added:**
+- [Release Workflow](RELEASE_WORKFLOW.md) - Complete guide to automated release process
+  - GitHub Actions CI/CD workflows
+  - Multi-platform binary distribution
+  - Homebrew, npm, and package manager integration
+  - Troubleshooting and best practices
+
 ### 2025-11-02 - Major Documentation Overhaul
 
 **Added:**
@@ -134,4 +147,4 @@ Have suggestions for documentation improvements?
 
 ---
 
-**Last updated:** 2025-11-02
+**Last updated:** 2025-11-03
