@@ -41,12 +41,6 @@ Instance 5: Updates documentation
 
 ### 1. Install
 
-**macOS/Linux (Homebrew):**
-```bash
-brew tap autonomous-dev/tap
-brew install autonomous-dev
-```
-
 **npm (Any OS):**
 ```bash
 npm install -g @autonomous-dev/cli
@@ -396,10 +390,10 @@ autonomous-dev start --instances=2 --task="Update API documentation for v2.0 end
 
 | Platform | Support | Installation |
 |----------|---------|--------------|
-| **macOS** (Intel) | ✅ | Homebrew, npm, binary |
-| **macOS** (Apple Silicon) | ✅ | Homebrew, npm, binary |
-| **Linux** (Ubuntu/Debian) | ✅ | Homebrew, npm, binary |
-| **Linux** (WSL) | ✅ | Homebrew, npm, binary |
+| **macOS** (Intel) | ✅ | npm, binary |
+| **macOS** (Apple Silicon) | ✅ | npm, binary |
+| **Linux** (Ubuntu/Debian) | ✅ | npm, binary |
+| **Linux** (WSL) | ✅ | npm, binary |
 | **Windows** | ⚠️ | npm, binary (limited testing) |
 | **GitHub Actions** | ✅ | Direct binary download |
 
