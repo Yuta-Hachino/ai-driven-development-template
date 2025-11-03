@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func StatusCmd() *cobra.Command{
+func StatusCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "status",
 		Short: "Check status of running instances",
