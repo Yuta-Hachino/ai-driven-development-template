@@ -22,38 +22,7 @@ Complete installation instructions for all platforms.
 
 ## Installation Methods
 
-### 1. Homebrew (macOS/Linux) - Recommended
-
-**Install Homebrew first** (if not installed):
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
-
-**Install Autonomous Dev:**
-```bash
-brew tap autonomous-dev/tap
-brew install autonomous-dev
-```
-
-**Verify:**
-```bash
-autonomous-dev --version
-```
-
-**Update:**
-```bash
-brew upgrade autonomous-dev
-```
-
-**Uninstall:**
-```bash
-brew uninstall autonomous-dev
-brew untap autonomous-dev/tap
-```
-
----
-
-### 2. npm (All Platforms)
+### 1. npm (All Platforms) - Recommended
 
 **Install via npm:**
 ```bash
@@ -82,7 +51,7 @@ npm uninstall -g @autonomous-dev/cli
 
 ---
 
-### 3. Direct Binary Download
+### 2. Direct Binary Download
 
 #### macOS (Apple Silicon)
 
@@ -125,7 +94,7 @@ Expand-Archive -Path "autonomous-dev.zip" -DestinationPath "C:\Program Files\aut
 
 ---
 
-### 4. Build from Source
+### 3. Build from Source
 
 **Prerequisites:**
 - Go 1.21+
@@ -224,14 +193,6 @@ xattr -d com.apple.quarantine /usr/local/bin/autonomous-dev
 ```
 
 Or go to **System Preferences** → **Security & Privacy** → click **"Allow Anyway"**.
-
-**Homebrew on Apple Silicon:**
-
-Ensure Homebrew is in PATH:
-```bash
-echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zshrc
-source ~/.zshrc
-```
 
 ---
 
@@ -393,28 +354,6 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ---
 
-### Issue: Homebrew installation fails
-
-**Solution:**
-
-1. Update Homebrew:
-   ```bash
-   brew update
-   ```
-
-2. Try again:
-   ```bash
-   brew install autonomous-dev
-   ```
-
-3. Check tap:
-   ```bash
-   brew tap autonomous-dev/tap
-   brew install autonomous-dev/tap/autonomous-dev
-   ```
-
----
-
 ### Issue: npm installation fails
 
 **Solution:**
@@ -455,12 +394,6 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ## Updating
 
-### Homebrew
-
-```bash
-brew upgrade autonomous-dev
-```
-
 ### npm
 
 ```bash
@@ -485,13 +418,6 @@ autonomous-dev --version
 ---
 
 ## Uninstalling
-
-### Homebrew
-
-```bash
-brew uninstall autonomous-dev
-brew untap autonomous-dev/tap
-```
 
 ### npm
 
