@@ -1,89 +1,191 @@
 # Release Workflow Guide
 
-Complete guide to the automated release workflow for Autonomous Dev CLI.
+Complete guide to the **fully automated** release workflow for Autonomous Dev CLI.
 
 ---
 
-## Overview
+## 🎯 Overview
 
-The release process is **fully automated** through GitHub Actions. When a PR is merged to `main`, a new release is automatically created based on the `VERSION` file.
+The release process is **100% automated** through GitHub Actions with automatic version bumping based on commit messages.
 
-**Time to Release**: ~5 minutes (fully automated)
+**Time to Release**: ~5 minutes (from PR merge to published release)
 
 **Distributions**:
 - GitHub Releases (binaries for 6 platforms)
-- npm (all platforms)
-- apt/yum (Linux packages)
+- npm (coming soon - when NPM_TOKEN configured)
+- deb/rpm/apk (Linux packages)
 
-**Trigger Methods**:
-1. **Automatic**: Merge PR to `main` (recommended)
-2. **Manual**: Run workflow from GitHub UI
-3. **Legacy**: Push version tag (backward compatible)
+**How it Works**:
+1. **You**: Write code with conventional commit messages
+2. **GitHub Actions**: Automatically determines version bump (MAJOR/MINOR/PATCH)
+3. **Auto Version Bump**: Updates VERSION file and commits to main
+4. **Release Workflow**: Builds and publishes release
 
 ---
 
-## Quick Release (TL;DR)
+## 🚀 Quick Start (TL;DR)
 
-### Method 1: Automatic (Recommended)
+**Just merge your PR with conventional commits - everything else is automatic!**
 
 ```bash
-# 1. Update VERSION file in your branch
-echo "0.2.0" > VERSION
-git add VERSION
-git commit -m "chore: Bump version to 0.2.0"
+# 1. Write code with conventional commits
+git commit -m "feat: Add new dashboard feature"
+git commit -m "fix: Correct status display bug"
 
 # 2. Create PR and merge to main
 git push origin your-feature-branch
 
-# 3. Merge PR on GitHub → Release automatically triggers! ✅
+# 3. Auto magic! ✨
+#    → Auto version bump (feat: = MINOR bump)
+#    → VERSION updated (0.2.1 → 0.3.0)
+#    → Release created automatically
 ```
 
-### Method 2: Manual Trigger
-
-1. Go to: https://github.com/your-org/your-repo/actions/workflows/release.yml
-2. Click "Run workflow"
-3. Enter version (e.g., `0.2.0`)
-4. Click "Run workflow" button ✅
+**Done!** Check releases in ~5 minutes: https://github.com/Yuta-Hachino/ai-driven-development-template/releases
 
 ---
 
-## Detailed Workflow
+## 📋 Conventional Commits (Version Bump Rules)
 
-### Step 1: Decide on Version Number
+Your commit messages control the version bump:
 
-Follow [Semantic Versioning](https://semver.org/):
-- **MAJOR** (1.0.0 → 2.0.0): Breaking changes, incompatible API
-- **MINOR** (1.0.0 → 1.1.0): New features, backward compatible
-- **PATCH** (1.0.0 → 1.0.1): Bug fixes, backward compatible
+| Commit Type | Example | Version Bump | Example |
+|-------------|---------|--------------|---------|
+| `feat!:` or `BREAKING CHANGE:` | `feat!: Remove deprecated API` | **MAJOR** | 0.2.1 → 1.0.0 |
+| `feat:` | `feat: Add export command` | **MINOR** | 0.2.1 → 0.3.0 |
+| `fix:`, `docs:`, `chore:` | `fix: Correct error handling` | **PATCH** | 0.2.1 → 0.2.2 |
 
-### Step 2: Update VERSION File
+**See full guide**: [`.ai/VERSIONING_GUIDELINES.md`](../.ai/VERSIONING_GUIDELINES.md)
 
-In your feature branch:
+---
 
-```bash
-# Update VERSION file
-echo "1.2.0" > VERSION
+## 🔄 Automatic Release Flow
 
-# Commit the change
-git add VERSION
-git commit -m "chore: Bump version to 1.2.0"
-```
-
-**Important**: The `VERSION` file contains only the version number (no `v` prefix).
-
-### Step 3: Create PR and Merge
+### Step 1: Development (You)
 
 ```bash
-# Push your branch
-git push origin feature/my-feature
+# Work on your feature
+git checkout -b feature/amazing-feature
 
-# Create PR on GitHub
-# Review, approve, merge to main
+# Make commits with conventional format
+git commit -m "feat: Add amazing feature"
+git commit -m "docs: Update README"
+git commit -m "test: Add feature tests"
+
+# Push and create PR
+git push origin feature/amazing-feature
 ```
 
-### Step 4: Automated Release Process
+### Step 2: PR Merge → Auto Version Bump
 
-Once merged to `main`, `.github/workflows/release.yml` is triggered automatically:
+When your PR is merged to `main`:
+
+```
+1. Auto Version Bump Workflow triggers
+   ↓
+2. Analyzes all commits in the PR
+   ├─ "feat:" found → MINOR bump
+   ├─ "fix:" found → PATCH bump
+   └─ "feat!:" found → MAJOR bump
+   ↓
+3. Updates VERSION file
+   └─ Example: 0.2.1 → 0.3.0 (for feat:)
+   ↓
+4. Commits to main
+   └─ "chore: Bump version to 0.3.0 [minor]"
+   ↓
+5. Comments on PR with new version
+```
+
+### Step 3: Release Workflow → Build & Publish
+
+VERSION file change triggers release workflow:
+
+```
+1. Release Workflow triggers (VERSION changed)
+   ↓
+2. Creates git tag (v0.3.0)
+   ↓
+3. Runs tests
+   ├─ If fail → stop ❌
+   └─ If pass → continue ✓
+   ↓
+4. GoReleaser builds binaries
+   ├─ macOS (Intel + ARM)
+   ├─ Linux (amd64 + arm64)
+   └─ Windows (amd64 + arm64)
+   ↓
+5. Creates GitHub Release with:
+   ├─ Binary archives (.tar.gz, .zip)
+   ├─ Linux packages (.deb, .rpm, .apk)
+   ├─ Checksums (SHA256)
+   └─ Auto-generated changelog
+   ↓
+6. Publishes to npm (if NPM_TOKEN set)
+```
+
+**Total time**: ~5 minutes from PR merge to published release
+
+---
+
+## 🎛️ Manual Release (Override)
+
+If you need to manually trigger a release:
+
+### Method 1: GitHub UI
+
+1. Go to: https://github.com/Yuta-Hachino/ai-driven-development-template/actions/workflows/release.yml
+2. Click "Run workflow"
+3. Enter version (e.g., `0.3.0`)
+4. Click "Run workflow" button ✅
+
+### Method 2: Skip Auto Version Bump
+
+Add `[skip version]` to PR title to prevent automatic version bump:
+
+```
+PR Title: "[skip version] Update documentation"
+```
+
+Then manually update VERSION and create release.
+
+---
+
+## 📖 Detailed Workflow
+
+### Automated Workflows
+
+#### 1. Auto Version Bump Workflow (`.github/workflows/auto-version-bump.yml`)
+
+**Trigger**: PR closed (merged) to `main`
+
+**Steps**:
+```
+1. Checkout main branch with full history
+2. Get current VERSION (e.g., 0.2.1)
+3. Fetch all commits from the merged PR
+4. Analyze commit messages:
+   ├─ Check for: feat!, fix!, BREAKING CHANGE:
+   │  └─ Found → MAJOR bump (0.2.1 → 1.0.0)
+   ├─ Check for: feat:
+   │  └─ Found → MINOR bump (0.2.1 → 0.3.0)
+   └─ Check for: fix:, docs:, chore:, etc.
+      └─ Found → PATCH bump (0.2.1 → 0.2.2)
+5. Update VERSION file with new version
+6. Commit: "chore: Bump version to X.Y.Z [type]"
+7. Push to main
+8. Comment on PR with new version info
+```
+
+**Skip conditions**:
+- PR title contains `[skip version]`
+- No conventional commits found
+
+#### 2. Release Workflow (`.github/workflows/release.yml`)
+
+**Trigger**: Push to `main` with VERSION file changed
+
+**Steps**:
 
 #### Job 1: `goreleaser` (Build & Publish Binaries)
 
@@ -132,37 +234,42 @@ Runs after `goreleaser` completes successfully:
    └─ Run: npm publish --access public
 ```
 
-### Step 4: Verify Release
+---
 
-After ~5 minutes, verify the release:
+## ✅ Verify Release
 
-#### GitHub Releases
+After ~5 minutes, verify the release was created successfully:
 
-1. Go to https://github.com/autonomous-dev/cli/releases
-2. Verify new release appears (e.g., `v1.0.1`)
-3. Check assets:
-   - [ ] `autonomous-dev_1.0.1_linux_amd64.tar.gz`
-   - [ ] `autonomous-dev_1.0.1_darwin_arm64.tar.gz`
-   - [ ] `autonomous-dev_1.0.1_windows_amd64.zip`
+### GitHub Releases
+
+1. **Go to**: https://github.com/Yuta-Hachino/ai-driven-development-template/releases
+2. **Verify**: New release appears (e.g., `v0.3.0`)
+3. **Check assets**:
+   - [ ] `autonomous-dev_0.3.0_Linux_amd64.tar.gz`
+   - [ ] `autonomous-dev_0.3.0_Darwin_arm64.tar.gz` (macOS Apple Silicon)
+   - [ ] `autonomous-dev_0.3.0_Darwin_amd64.tar.gz` (macOS Intel)
+   - [ ] `autonomous-dev_0.3.0_Windows_amd64.zip`
+   - [ ] `autonomous-dev_0.3.0_amd64.deb` (Debian/Ubuntu)
+   - [ ] `autonomous-dev_0.3.0_amd64.rpm` (Red Hat/Fedora)
    - [ ] `checksums.txt`
-   - [ ] Other platform binaries
+4. **Verify**: Changelog auto-generated from commits
 
-#### npm
+### npm (If NPM_TOKEN configured)
 
 ```bash
 # Check published version
 npm view @autonomous-dev/cli version
-# Output: 1.0.1
+# Expected: 0.3.0
 
-# Install/update
+# Install globally
 npm install -g @autonomous-dev/cli
-# or
-npm update -g @autonomous-dev/cli
 
-# Verify
+# Verify installation
 autonomous-dev --version
-# Output: autonomous-dev version 1.0.1
+# Expected: autonomous-dev version 0.3.0
 ```
+
+**Note**: npm publishing requires `NPM_TOKEN` secret to be configured in GitHub repository settings.
 
 ---
 
@@ -187,7 +294,7 @@ Set these in GitHub repository settings → Secrets and variables → Actions:
 
 ---
 
-## Rollback & Hotfixes
+## 🔄 Rollback & Hotfixes
 
 ### Rollback a Release
 
@@ -195,38 +302,48 @@ If a release has critical issues:
 
 ```bash
 # 1. Delete the GitHub Release
-# Go to: https://github.com/autonomous-dev/cli/releases
+# Go to: https://github.com/Yuta-Hachino/ai-driven-development-template/releases
 # Click on release → Delete release
 
 # 2. Delete the tag locally and remotely
-git tag -d v1.0.1
-git push origin :refs/tags/v1.0.1
+git tag -d v0.3.0
+git push origin :refs/tags/v0.3.0
 
-# 3. Unpublish from npm (within 72 hours)
-npm unpublish @autonomous-dev/cli@1.0.1
+# 3. Unpublish from npm (if published, within 72 hours)
+npm unpublish @autonomous-dev/cli@0.3.0
+
+# 4. Revert VERSION file if needed
+echo "0.2.1" > VERSION
+git add VERSION
+git commit -m "chore: Revert to 0.2.1"
+git push origin main
 ```
 
 ### Hotfix Release
 
-For urgent bug fixes:
+For urgent bug fixes, just use conventional commits with `fix:`:
 
 ```bash
-# 1. Create hotfix branch from tag
-git checkout -b hotfix/1.0.2 v1.0.1
+# 1. Create hotfix branch
+git checkout -b hotfix/critical-bug
 
-# 2. Fix the bug
-vim internal/cli/start.go
+# 2. Fix the bug with conventional commit
 git commit -m "fix: Critical bug in start command"
 
-# 3. Merge to main
-git checkout main
-git merge hotfix/1.0.2
+# 3. Create PR and merge
+# → Auto version bump: 0.3.0 → 0.3.1 (PATCH)
+# → Release created automatically
+```
 
-# 4. Create hotfix tag
-git tag v1.0.2
-git push origin v1.0.2
+**Fast track** (for very urgent fixes):
 
-# 5. Release happens automatically
+```bash
+# Manually update VERSION and create release
+echo "0.3.1" > VERSION
+git add VERSION
+git commit -m "chore: Bump version to 0.3.1 [patch]"
+git push origin main
+# → Release workflow triggers immediately
 ```
 
 ---
