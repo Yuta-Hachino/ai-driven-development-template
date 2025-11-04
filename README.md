@@ -41,20 +41,30 @@ Instance 5: Updates documentation
 
 ### 1. Install
 
-**npm (Any OS):**
+**Direct download (recommended):**
 ```bash
-npm install -g @autonomous-dev/cli
+# Linux (AMD64)
+curl -L https://github.com/Yuta-Hachino/ai-driven-development-template/releases/download/v0.2.1/autonomous-dev_0.2.1_Linux_amd64.tar.gz | tar xz
+sudo mv autonomous-dev /usr/local/bin/
+
+# macOS (Apple Silicon - M1/M2/M3)
+curl -L https://github.com/Yuta-Hachino/ai-driven-development-template/releases/download/v0.2.1/autonomous-dev_0.2.1_Darwin_arm64.tar.gz | tar xz
+sudo mv autonomous-dev /usr/local/bin/
+
+# macOS (Intel)
+curl -L https://github.com/Yuta-Hachino/ai-driven-development-template/releases/download/v0.2.1/autonomous-dev_0.2.1_Darwin_amd64.tar.gz | tar xz
+sudo mv autonomous-dev /usr/local/bin/
 ```
 
-**Direct download:**
+**Package managers:**
 ```bash
-# Linux
-curl -L https://github.com/autonomous-dev/cli/releases/download/v1.0.0/autonomous-dev_1.0.0_linux_amd64.tar.gz | tar xz
-sudo mv autonomous-dev /usr/local/bin/
+# Debian/Ubuntu
+wget https://github.com/Yuta-Hachino/ai-driven-development-template/releases/download/v0.2.1/autonomous-dev_0.2.1_amd64.deb
+sudo dpkg -i autonomous-dev_0.2.1_amd64.deb
 
-# macOS (Apple Silicon)
-curl -L https://github.com/autonomous-dev/cli/releases/download/v1.0.0/autonomous-dev_1.0.0_darwin_arm64.tar.gz | tar xz
-sudo mv autonomous-dev /usr/local/bin/
+# Red Hat/Fedora/CentOS
+wget https://github.com/Yuta-Hachino/ai-driven-development-template/releases/download/v0.2.1/autonomous-dev_0.2.1_amd64.rpm
+sudo rpm -i autonomous-dev_0.2.1_amd64.rpm
 ```
 
 ### 2. Initialize in Your Project
@@ -390,11 +400,11 @@ autonomous-dev start --instances=2 --task="Update API documentation for v2.0 end
 
 | Platform | Support | Installation |
 |----------|---------|--------------|
-| **macOS** (Intel) | ✅ | npm, binary |
-| **macOS** (Apple Silicon) | ✅ | npm, binary |
-| **Linux** (Ubuntu/Debian) | ✅ | npm, binary |
-| **Linux** (WSL) | ✅ | npm, binary |
-| **Windows** | ⚠️ | npm, binary (limited testing) |
+| **macOS** (Intel) | ✅ | binary, deb/rpm |
+| **macOS** (Apple Silicon) | ✅ | binary, deb/rpm |
+| **Linux** (Ubuntu/Debian) | ✅ | binary, deb/rpm |
+| **Linux** (WSL) | ✅ | binary, deb/rpm |
+| **Windows** | ⚠️ | binary (limited testing) |
 | **GitHub Actions** | ✅ | Direct binary download |
 
 ---
@@ -405,14 +415,14 @@ autonomous-dev start --instances=2 --task="Update API documentation for v2.0 end
 
 ```bash
 # Clone repository
-git clone https://github.com/autonomous-dev/cli.git
-cd cli
+git clone https://github.com/Yuta-Hachino/ai-driven-development-template.git
+cd ai-driven-development-template
 
 # Install dependencies
 go mod download
 
 # Build
-make build
+go build -o autonomous-dev ./cmd/autonomous-dev
 
 # Run
 ./autonomous-dev --version
@@ -509,8 +519,9 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ## 🔗 Links
 
 - **Documentation**: [docs/](docs/)
-- **Issues**: [GitHub Issues](https://github.com/autonomous-dev/cli/issues)
-- **Releases**: [GitHub Releases](https://github.com/autonomous-dev/cli/releases)
+- **Issues**: [GitHub Issues](https://github.com/Yuta-Hachino/ai-driven-development-template/issues)
+- **Releases**: [GitHub Releases](https://github.com/Yuta-Hachino/ai-driven-development-template/releases)
+- **Latest Release**: [v0.2.1](https://github.com/Yuta-Hachino/ai-driven-development-template/releases/tag/v0.2.1)
 
 ---
 
