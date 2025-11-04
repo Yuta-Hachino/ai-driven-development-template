@@ -22,99 +22,87 @@ Complete installation instructions for all platforms.
 
 ## Installation Methods
 
-### 1. npm (All Platforms) - Recommended
+### 1. Direct Binary Download (Recommended)
 
-**Install via npm:**
-```bash
-npm install -g @autonomous-dev/cli
-```
+**Latest version:** v0.2.1
 
-**Verify:**
-```bash
-autonomous-dev --version
-```
+Pre-built binaries are available for all major platforms.
 
-**Update:**
-```bash
-npm update -g @autonomous-dev/cli
-```
-
-**Uninstall:**
-```bash
-npm uninstall -g @autonomous-dev/cli
-```
-
-**How it works:**
-- Downloads pre-built binary for your platform
-- Creates wrapper script in `node_modules/.bin/`
-- No Node.js runtime needed after installation
-
----
-
-### 2. Direct Binary Download
-
-#### macOS (Apple Silicon)
+#### macOS (Apple Silicon - M1/M2/M3)
 
 ```bash
-curl -L https://github.com/autonomous-dev/cli/releases/download/v1.0.0/autonomous-dev_1.0.0_darwin_arm64.tar.gz -o autonomous-dev.tar.gz
+curl -L https://github.com/Yuta-Hachino/ai-driven-development-template/releases/download/v0.2.1/autonomous-dev_0.2.1_Darwin_arm64.tar.gz -o autonomous-dev.tar.gz
 tar -xzf autonomous-dev.tar.gz
 sudo mv autonomous-dev /usr/local/bin/
 sudo chmod +x /usr/local/bin/autonomous-dev
 rm autonomous-dev.tar.gz
+autonomous-dev --version
 ```
 
 #### macOS (Intel)
 
 ```bash
-curl -L https://github.com/autonomous-dev/cli/releases/download/v1.0.0/autonomous-dev_1.0.0_darwin_amd64.tar.gz -o autonomous-dev.tar.gz
+curl -L https://github.com/Yuta-Hachino/ai-driven-development-template/releases/download/v0.2.1/autonomous-dev_0.2.1_Darwin_amd64.tar.gz -o autonomous-dev.tar.gz
 tar -xzf autonomous-dev.tar.gz
 sudo mv autonomous-dev /usr/local/bin/
 sudo chmod +x /usr/local/bin/autonomous-dev
 rm autonomous-dev.tar.gz
+autonomous-dev --version
 ```
 
 #### Linux (Ubuntu/Debian/WSL)
 
+**Via package manager (Debian/Ubuntu):**
 ```bash
-curl -L https://github.com/autonomous-dev/cli/releases/download/v1.0.0/autonomous-dev_1.0.0_linux_amd64.tar.gz -o autonomous-dev.tar.gz
+wget https://github.com/Yuta-Hachino/ai-driven-development-template/releases/download/v0.2.1/autonomous-dev_0.2.1_amd64.deb
+sudo dpkg -i autonomous-dev_0.2.1_amd64.deb
+autonomous-dev --version
+```
+
+**Via tar.gz:**
+```bash
+curl -L https://github.com/Yuta-Hachino/ai-driven-development-template/releases/download/v0.2.1/autonomous-dev_0.2.1_Linux_amd64.tar.gz -o autonomous-dev.tar.gz
 tar -xzf autonomous-dev.tar.gz
 sudo mv autonomous-dev /usr/local/bin/
 sudo chmod +x /usr/local/bin/autonomous-dev
 rm autonomous-dev.tar.gz
+autonomous-dev --version
+```
+
+#### Linux (Red Hat/Fedora/CentOS)
+
+```bash
+wget https://github.com/Yuta-Hachino/ai-driven-development-template/releases/download/v0.2.1/autonomous-dev_0.2.1_amd64.rpm
+sudo rpm -i autonomous-dev_0.2.1_amd64.rpm
+autonomous-dev --version
 ```
 
 #### Windows
 
 ```powershell
 # PowerShell
-Invoke-WebRequest -Uri "https://github.com/autonomous-dev/cli/releases/download/v1.0.0/autonomous-dev_1.0.0_windows_amd64.zip" -OutFile "autonomous-dev.zip"
+Invoke-WebRequest -Uri "https://github.com/Yuta-Hachino/ai-driven-development-template/releases/download/v0.2.1/autonomous-dev_0.2.1_Windows_amd64.zip" -OutFile "autonomous-dev.zip"
 Expand-Archive -Path "autonomous-dev.zip" -DestinationPath "C:\Program Files\autonomous-dev"
-# Add to PATH manually
+# Add to PATH manually or use via full path
 ```
+
+**Note:** Windows support is limited. WSL is recommended for best experience.
 
 ---
 
-### 3. Build from Source
+### 2. Build from Source
 
 **Prerequisites:**
 - Go 1.21+
-- Make (optional)
 
 **Clone and build:**
 ```bash
-git clone https://github.com/autonomous-dev/cli.git
-cd cli
+git clone https://github.com/Yuta-Hachino/ai-driven-development-template.git
+cd ai-driven-development-template
 go mod download
 go build -o autonomous-dev ./cmd/autonomous-dev
 sudo mv autonomous-dev /usr/local/bin/
-```
-
-**Or use Make:**
-```bash
-git clone https://github.com/autonomous-dev/cli.git
-cd cli
-make build
-sudo make install
+autonomous-dev --version
 ```
 
 ---
@@ -354,25 +342,6 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ---
 
-### Issue: npm installation fails
-
-**Solution:**
-
-1. Clear npm cache:
-   ```bash
-   npm cache clean --force
-   ```
-
-2. Install with sudo (if permissions error):
-   ```bash
-   sudo npm install -g @autonomous-dev/cli
-   ```
-
-3. Or use npx (no global install):
-   ```bash
-   npx @autonomous-dev/cli --version
-   ```
-
 ---
 
 ### Issue: Windows binary won't run
@@ -394,42 +363,42 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ## Updating
 
-### npm
+Download the latest release and replace the binary:
 
 ```bash
-npm update -g @autonomous-dev/cli
-```
+# Check current version
+autonomous-dev --version
 
-### Manual
-
-Download latest release and replace binary:
-```bash
 # Backup current version
-mv /usr/local/bin/autonomous-dev /usr/local/bin/autonomous-dev.bak
+sudo mv /usr/local/bin/autonomous-dev /usr/local/bin/autonomous-dev.bak
 
-# Download and install new version
-curl -L https://github.com/autonomous-dev/cli/releases/download/v2.0.0/... | tar xz
+# Download and install new version (example: v0.3.0)
+curl -L https://github.com/Yuta-Hachino/ai-driven-development-template/releases/download/v0.3.0/autonomous-dev_0.3.0_Linux_amd64.tar.gz | tar xz
 sudo mv autonomous-dev /usr/local/bin/
 
-# Verify
+# Verify new version
 autonomous-dev --version
 ```
+
+**Check for updates:**
+- Visit: https://github.com/Yuta-Hachino/ai-driven-development-template/releases
 
 ---
 
 ## Uninstalling
 
-### npm
+Remove the binary and optional configuration:
 
 ```bash
-npm uninstall -g @autonomous-dev/cli
-```
-
-### Manual
-
-```bash
+# Remove binary
 sudo rm /usr/local/bin/autonomous-dev
-rm -rf ~/.autonomous-dev  # Optional: remove config
+
+# Optional: remove configuration
+rm -rf ~/.autonomous-dev
+
+# If installed via package manager
+sudo dpkg -r autonomous-dev  # Debian/Ubuntu
+sudo rpm -e autonomous-dev   # Red Hat/Fedora/CentOS
 ```
 
 ---
@@ -448,5 +417,6 @@ After installation:
 ## Support
 
 - 📖 [Documentation](../README.md)
-- 🐛 [Issues](https://github.com/autonomous-dev/cli/issues)
-- 💬 [Discussions](https://github.com/autonomous-dev/cli/discussions)
+- 🐛 [Issues](https://github.com/Yuta-Hachino/ai-driven-development-template/issues)
+- 🚀 [Releases](https://github.com/Yuta-Hachino/ai-driven-development-template/releases)
+- 📦 [Latest: v0.2.1](https://github.com/Yuta-Hachino/ai-driven-development-template/releases/tag/v0.2.1)
