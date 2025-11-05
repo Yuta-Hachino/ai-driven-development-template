@@ -95,7 +95,8 @@ jobs:
   update-npm:
     needs: goreleaser
     runs-on: ubuntu-latest
-    if: needs.goreleaser.outputs.skip != 'true'
+    # Publish to npm if NPM_TOKEN is configured
+    if: needs.goreleaser.outputs.skip != 'true' && secrets.NPM_TOKEN != ''
     steps:
       - name: Checkout
         uses: actions/checkout@v4
