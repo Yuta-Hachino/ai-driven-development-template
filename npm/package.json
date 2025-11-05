@@ -1,6 +1,6 @@
 {
   "name": "@autonomous-dev/cli",
-  "version": "1.0.0",
+  "version": "0.2.2",
   "description": "Multi-instance Claude Code orchestrator for parallel development",
   "main": "index.js",
   "bin": {

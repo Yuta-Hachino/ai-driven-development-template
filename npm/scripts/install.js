@@ -6,7 +6,10 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const VERSION = '1.0.0'; // Should match package.json
+// Read version from package.json
+const packageJson = require('../package.json');
+const VERSION = packageJson.version;
+const REPO = 'Yuta-Hachino/ai-driven-development-template';
 
 function getPlatformInfo() {
   const platform = os.platform();
@@ -14,13 +17,13 @@ function getPlatformInfo() {
 
   let osName, archName;
 
-  // Map platform
+  // Map platform (match GoReleaser naming: Darwin, Linux, Windows)
   if (platform === 'darwin') {
-    osName = 'darwin';
+    osName = 'Darwin';
   } else if (platform === 'linux') {
-    osName = 'linux';
+    osName = 'Linux';
   } else if (platform === 'win32') {
-    osName = 'windows';
+    osName = 'Windows';
   } else {
     throw new Error(`Unsupported platform: ${platform}`);
   }
@@ -62,9 +65,9 @@ async function install() {
   try {
     const { osName, archName } = getPlatformInfo();
 
-    const ext = osName === 'windows' ? 'zip' : 'tar.gz';
+    const ext = osName === 'Windows' ? 'zip' : 'tar.gz';
     const filename = `autonomous-dev_${VERSION}_${osName}_${archName}.${ext}`;
-    const downloadUrl = `https://github.com/autonomous-dev/cli/releases/download/v${VERSION}/${filename}`;
+    const downloadUrl = `https://github.com/${REPO}/releases/download/v${VERSION}/${filename}`;
 
     console.log(`Downloading autonomous-dev binary for ${osName}/${archName}...`);
     console.log(`URL: ${downloadUrl}`);
@@ -86,8 +89,8 @@ async function install() {
     }
 
     // Make executable
-    const binaryPath = path.join(binDir, osName === 'windows' ? 'autonomous-dev.exe' : 'autonomous-dev');
-    if (osName !== 'windows') {
+    const binaryPath = path.join(binDir, osName === 'Windows' ? 'autonomous-dev.exe' : 'autonomous-dev');
+    if (osName !== 'Windows') {
       fs.chmodSync(binaryPath, 0o755);
     }
 
@@ -98,7 +101,7 @@ async function install() {
   } catch (error) {
     console.error('Failed to install autonomous-dev:', error.message);
     console.error('\nYou can download manually from:');
-    console.error('https://github.com/autonomous-dev/cli/releases');
+    console.error(`https://github.com/${REPO}/releases`);
     process.exit(1);
   }
 }
