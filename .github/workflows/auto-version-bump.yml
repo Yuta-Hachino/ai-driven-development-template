@@ -8,6 +8,8 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write  # For commenting on PRs
+  pages: write          # For Pages deployment (if needed)
 
 jobs:
   bump-version:
@@ -19,6 +21,8 @@ jobs:
         with:
           fetch-depth: 0
           ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
 
       - name: Analyze commits and determine version bump
         id: version
@@ -112,6 +116,8 @@ PR: ${{ github.event.pull_request.html_url }}"
 
       - name: Push changes
         if: steps.version.outputs.skip != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git push origin main
           echo "🚀 Pushed version bump commit to main"
