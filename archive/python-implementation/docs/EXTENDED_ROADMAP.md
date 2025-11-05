@@ -874,6 +874,7 @@ export const InstanceNetwork: React.FC<InstanceNetworkProps> = ({
 ```
 
 **Task Timeline Gantt Chart** (`frontend/src/components/TaskTimeline.tsx`):
+{% raw %}
 ```typescript
 import React from 'react'
 import { Chart } from 'react-google-charts'
@@ -921,6 +922,7 @@ export const TaskTimeline: React.FC<{ tasks: Task[] }> = ({ tasks }) => {
   )
 }
 ```
+{% endraw %}
 
 #### 3. Interactive Controls
 
