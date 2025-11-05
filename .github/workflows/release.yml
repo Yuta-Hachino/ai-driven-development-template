@@ -95,7 +95,9 @@ jobs:
   update-npm:
     needs: goreleaser
     runs-on: ubuntu-latest
-    if: needs.goreleaser.outputs.skip != 'true'
+    # Only run if NPM_TOKEN secret is configured
+    # To enable: Set NPM_TOKEN in repository secrets and uncomment the 'if' line below
+    if: false  # Disabled until @autonomous-dev scope is created on npmjs.org
     steps:
       - name: Checkout
         uses: actions/checkout@v4
