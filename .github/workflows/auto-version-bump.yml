@@ -136,17 +136,18 @@ jobs:
           script: |
             const newVersion = process.env.NEW_VERSION;
             const bumpType = process.env.BUMP_TYPE;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const body = '🎉 **Version bumped automatically**\n\n' +
+              '📦 **New version**: `' + newVersion + '`\n' +
+              '📈 **Bump type**: `' + bumpType + '`\n\n' +
+              'The release workflow will trigger automatically and create release `v' + newVersion + '` in ~5 minutes.\n\n' +
+              '🔗 [View Releases](https://github.com/' + owner + '/' + repo + '/releases)';
 
             github.rest.issues.createComment({
               issue_number: context.payload.pull_request.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `🎉 **Version bumped automatically**
-
-📦 **New version**: \`${newVersion}\`
-📈 **Bump type**: \`${bumpType}\`
-
-The release workflow will trigger automatically and create release \`v${newVersion}\` in ~5 minutes.
-
-🔗 [View Releases](https://github.com/${context.repo.owner}/${context.repo.repo}/releases)`
+              owner: owner,
+              repo: repo,
+              body: body
             });
