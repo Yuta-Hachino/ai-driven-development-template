@@ -1,11 +1,13 @@
 name: Release
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Auto Version Bump"]
+    types:
+      - completed
     branches:
-      - main  # mainへのマージで自動リリース
-    paths:
-      - 'VERSION'  # VERSIONファイルが変更された時のみ
+      - main
+  push:
     tags:
       - 'v*'  # v1.0.0, v1.2.3 等のタグでトリガー（後方互換）
   workflow_dispatch:
@@ -22,6 +24,8 @@ permissions:
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
+    # workflow_runイベントの場合、成功時のみ実行
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     outputs:
       skip: ${{ steps.version.outputs.skip }}
     steps:
@@ -29,6 +33,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # 全履歴取得（changelogに必要）
+          ref: main  # workflow_runの場合、mainブランチを明示的にチェックアウト
 
       - name: Set version
         id: version
