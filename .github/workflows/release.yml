@@ -19,7 +19,6 @@ on:
 
 permissions:
   contents: write  # GitHub Releasesへの書き込み
-  packages: write  # GitHub Packagesへの書き込み（オプション）
 
 jobs:
   goreleaser:
