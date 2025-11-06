@@ -38,19 +38,18 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          if [ "${{ github.event_name }}" = "workflow_call" ]; then
-            # workflow_callトリガー: 呼び出し元から渡されたバージョンを使用
+          if [ -n "${{ inputs.version }}" ]; then
+            # workflow_call または workflow_dispatch: 渡されたバージョンを使用
             VERSION="${{ inputs.version }}"
-            # タグは既にauto-version-bumpで作成済み
-          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            # 手動トリガー: 入力されたバージョンを使用
-            VERSION="${{ github.event.inputs.version }}"
+            echo "📥 Using version from input: ${VERSION}"
           elif [ "${{ github.ref_type }}" = "tag" ]; then
             # タグプッシュ: タグからバージョンを取得
             VERSION=${GITHUB_REF#refs/tags/v}
+            echo "🏷️  Using version from tag: ${VERSION}"
           else
             # mainブランチへのプッシュ: VERSIONファイルから読み取り
             VERSION=$(cat VERSION | tr -d '\n')
+            echo "📄 Using version from VERSION file: ${VERSION}"
 
             # 既に同じバージョンのタグが存在するかチェック
             if git ls-remote --tags origin | grep -q "refs/tags/v${VERSION}$"; then
@@ -64,15 +63,13 @@ jobs:
           echo "skip=false" >> $GITHUB_OUTPUT
           echo "📦 Releasing version: ${VERSION}"
 
-          # workflow_call以外の場合、タグを作成
-          if [ "${{ github.event_name }}" != "workflow_call" ]; then
-            if ! git rev-parse "v${VERSION}" >/dev/null 2>&1; then
-              git tag -a "v${VERSION}" -m "Release v${VERSION}"
-              git push origin "v${VERSION}"
-              echo "✅ Created and pushed tag v${VERSION}"
-            else
-              echo "ℹ️  Tag v${VERSION} already exists locally"
-            fi
+          # タグが存在しない場合のみ作成
+          if ! git rev-parse "v${VERSION}" >/dev/null 2>&1; then
+            git tag -a "v${VERSION}" -m "Release v${VERSION}"
+            git push origin "v${VERSION}"
+            echo "✅ Created and pushed tag v${VERSION}"
+          else
+            echo "ℹ️  Tag v${VERSION} already exists"
           fi
 
           # Ensure we're on the tagged commit
@@ -112,11 +109,14 @@ jobs:
       - name: Get version
         id: get_version
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
+          if [ -n "${{ inputs.version }}" ]; then
+            # workflow_call または workflow_dispatch: 渡されたバージョンを使用
+            VERSION="${{ inputs.version }}"
           elif [ "${{ github.ref_type }}" = "tag" ]; then
+            # タグプッシュ: タグからバージョンを取得
             VERSION=${GITHUB_REF#refs/tags/v}
           else
+            # VERSIONファイルから読み取り
             VERSION=$(cat VERSION | tr -d '\n')
           fi
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
