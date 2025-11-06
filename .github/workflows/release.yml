@@ -1,9 +1,15 @@
 name: Release
 
 on:
+  workflow_call:  # 他のワークフローから呼び出し可能
+    inputs:
+      version:
+        description: 'Version to release'
+        required: true
+        type: string
   push:
     tags:
-      - 'v*'  # v1.0.0, v1.2.3 等のタグでトリガー
+      - 'v*'  # v1.0.0, v1.2.3 等のタグでトリガー（手動タグpush用）
   workflow_dispatch:
     inputs:
       version:
@@ -32,7 +38,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if [ "${{ github.event_name }}" = "workflow_call" ]; then
+            # workflow_callトリガー: 呼び出し元から渡されたバージョンを使用
+            VERSION="${{ inputs.version }}"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             # 手動トリガー: 入力されたバージョンを使用
             VERSION="${{ github.event.inputs.version }}"
           elif [ "${{ github.ref_type }}" = "tag" ]; then

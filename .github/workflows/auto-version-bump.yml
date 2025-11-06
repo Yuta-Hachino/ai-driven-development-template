@@ -15,6 +15,9 @@ jobs:
   bump-version:
     if: github.event.pull_request.merged == true && !contains(github.event.pull_request.title, '[skip version]')
     runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.version.outputs.new_version }}
+      skip: ${{ steps.version.outputs.skip }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -157,3 +160,11 @@ jobs:
               repo: repo,
               body: body
             });
+
+  trigger-release:
+    needs: bump-version
+    if: needs.bump-version.outputs.skip != 'true'
+    uses: ./.github/workflows/release.yml
+    with:
+      version: ${{ needs.bump-version.outputs.new_version }}
+    secrets: inherit
