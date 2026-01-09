@@ -1,0 +1,145 @@
+{
+  "repository_name": "ai-driven-development-template",
+  "analysis_date": "2026-01-09",
+  "primary_languages": ["Go"],
+  "frameworks": [
+    "Cobra (CLI framework)",
+    "go-github v56 (GitHub API)",
+    "Vue.js 3 (Dashboard)",
+    "Chart.js (Visualization)"
+  ],
+  "architecture_pattern": "Layered CLI Architecture with Clean Package Separation",
+  "code_quality_score": "6/10",
+  "strengths": [
+    "明確なパッケージ分離 (cmd/internal/pkg構造)",
+    "Conventional Commitsの厳格な運用",
+    "自動バージョンバンプ・リリースの完全自動化",
+    "マルチプラットフォームビルド対応 (6プラットフォーム)",
+    "AI向け開発ガイドラインの充実 (.ai/ディレクトリ)",
+    "error wrapping による適切なエラーハンドリング",
+    "GoReleaser + npmによる配布自動化",
+    "詳細なREADME・ドキュメント",
+    "環境変数によるシークレット管理",
+    "CI/CDで gofmt・vet・race detector 実行"
+  ],
+  "weaknesses": [
+    "Go単体テストが皆無 (*_test.goファイルなし)",
+    "一部未実装関数あり (execCommand returns 'not implemented')",
+    "アーカイブされたPython実装がリポジトリに残存",
+    "ダッシュボードのインラインCSS/JS (モジュール化不足)",
+    "API呼び出し時のレート制限対策なし",
+    "入力バリデーションが最小限",
+    "ログ出力が標準出力のみ (構造化ログなし)",
+    "コード約1000行に対してテストカバレッジ0%"
+  ],
+  "technical_level": "Mid",
+  "detailed_findings": {
+    "technology_stack": {
+      "language": "Go 1.24.7",
+      "cli_framework": "spf13/cobra v1.8.0",
+      "github_client": "google/go-github/v56",
+      "config_format": "YAML (gopkg.in/yaml.v3)",
+      "auth": "golang.org/x/oauth2",
+      "ui_enhancement": "fatih/color v1.16.0",
+      "frontend_dashboard": {
+        "framework": "Vue.js 3.3.4 (CDN)",
+        "charts": "Chart.js 4.4.0",
+        "api_client": "@octokit/rest"
+      }
+    },
+    "directory_structure": {
+      "pattern": "Standard Go Project Layout",
+      "cmd": "CLI entry point (main.go - 44行)",
+      "internal/cli": "コマンド実装 (init, start, status, dashboard, config)",
+      "internal/config": "設定管理 (YAML読み書き)",
+      "internal/github": "GitHub APIクライアント",
+      "internal/template": "ワークフローテンプレート",
+      "pkg/version": "バージョン情報",
+      "dashboard": "Webダッシュボード (Vue.js)",
+      "archive": "旧Python実装 (非使用)"
+    },
+    "code_metrics": {
+      "total_go_lines": 1036,
+      "files_count": 11,
+      "test_files": 0,
+      "test_coverage": "0%"
+    },
+    "coding_standards": {
+      "formatting": "gofmt enforced in CI",
+      "linting": "go vet in CI",
+      "naming_convention": "camelCase (Go標準)",
+      "error_handling": "fmt.Errorf with %w wrapping",
+      "comments": "最小限 (関数レベルのドキュメント不足)"
+    },
+    "ci_cd": {
+      "workflows": [
+        {
+          "name": "ci.yml",
+          "triggers": ["push to main", "pull_request"],
+          "jobs": ["test (race detector)", "build (6 platforms)", "vet", "format check"]
+        },
+        {
+          "name": "auto-version-bump.yml",
+          "triggers": ["PR merged to main"],
+          "features": ["Conventional Commits解析", "セマンティックバージョニング自動判定", "タグ自動作成"]
+        },
+        {
+          "name": "release.yml",
+          "triggers": ["tag push", "workflow_call", "manual"],
+          "features": ["GoReleaser", "マルチプラットフォームバイナリ", "deb/rpm/apkパッケージ", "npm publish"]
+        }
+      ],
+      "automation_level": "高 (PR merge→version bump→release 完全自動化)"
+    },
+    "security": {
+      "secrets_management": "環境変数 (GITHUB_TOKEN)",
+      "gitignore": "適切 (.env, *.key, *.pem等を除外)",
+      "token_exposure_risk": "低 (サーバーサイドでの露出なし)",
+      "dashboard_security": "LocalStorage使用 (クライアントサイドのみ)",
+      "input_validation": "最小限 (改善余地あり)",
+      "concerns": [
+        "GitHub Token が localStorage に平文保存",
+        "API呼び出しのレート制限対策なし"
+      ]
+    },
+    "documentation": {
+      "readme": "優秀 (インストール、使用方法、アーキテクチャ図)",
+      "ai_guidelines": "充実 (.ai/DEVELOPMENT_GUIDELINES.md - 650行)",
+      "versioning_guide": "あり (.ai/VERSIONING_GUIDELINES.md)",
+      "troubleshooting": "あり (docs/TROUBLESHOOTING.md)",
+      "api_docs": "なし (GoDoc未整備)"
+    },
+    "git_practices": {
+      "commit_convention": "Conventional Commits 厳格運用",
+      "branch_strategy": "claude/プレフィックス強制",
+      "pr_workflow": "merge後の自動version bump",
+      "recent_commits_quality": "良好 (feat:/fix:/chore:の適切な使い分け)"
+    },
+    "scalability": {
+      "design": "GitHub Actions依存 (無料枠2000分/月)",
+      "max_instances": "設定可能 (デフォルト10)",
+      "concurrency": "P2Pメッセージング (GitHub Issue経由)"
+    }
+  },
+  "recommendations": {
+    "critical": [
+      "単体テストの追加 (特にconfig, github パッケージ)",
+      "execCommand関数の実装完了 (現在not implemented)"
+    ],
+    "high": [
+      "GitHub APIレート制限の考慮と指数バックオフ実装",
+      "入力バリデーション強化 (URLパース、設定値検証)",
+      "構造化ログの導入 (log/slog or zerolog)"
+    ],
+    "medium": [
+      "archive/ディレクトリの別ブランチ/リポジトリへの移行",
+      "GoDoc形式のコメント追加",
+      "ダッシュボードのCSS/JSモジュール化"
+    ],
+    "low": [
+      "golangci-lintの追加",
+      "依存関係の脆弱性スキャン (dependabot)",
+      "E2Eテストの追加"
+    ]
+  }
+}
